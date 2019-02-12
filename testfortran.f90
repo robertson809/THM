@@ -15,6 +15,11 @@ program addNumbers
    message = "A kindred soul discovered in black sand and steel"
    print *, message
    
+   
+   !do loop is really a while loop
+   !stop is an exit statement, literally ends the program
+   !cycle is a continue
+   !exit exits the loop, equivalent to break
    do test = 1, 10
    		print *, "Iteration"
 		if (test == 5) then
