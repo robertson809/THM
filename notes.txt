@@ -1,0 +1,21 @@
+Questions and Notes
+
+! Questions
+
+! can't figure out how to compile the module in a different file 
+! and still have the program that uses it find it
+
+! are you not allowed to add allocate an array in a module?
+
+
+!End Questions
+
+!Notes
+
+!to compile a program, use gfortran [program name]
+!to run a program type ./[filename]
+! use lapack for any actually linear algebra
+! 1.d0 is a intrinsic fortran double
+! 1.e0 is an intrinsic fortran single
+! parameter tag makes it a final, it doesn't change throughout
+!End Notes
