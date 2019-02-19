@@ -1,6 +1,6 @@
-integer, parameter  :: dp = kind(1.d0)
 module tridiag
 	implicit none
+    integer, parameter  :: dp = kind(1.d0)
 	Complex (kind = dp), Allocatable :: m_diag(:), upper(:), lower(:)
 	
 contains      
