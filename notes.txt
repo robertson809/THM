@@ -19,3 +19,11 @@ Questions and Notes
 ! 1.e0 is an intrinsic fortran single
 ! parameter tag makes it a final, it doesn't change throughout
 !End Notes
+
+To get lots of warnings, use gfortran -Wall tridiag.f90 tridiag_driver.f90 
+You compile the module and the driver in the same line
+
+
+!Questions
+
+Should scalar multiplication change the matrix or just return the new value

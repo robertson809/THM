@@ -1,38 +1,59 @@
 module tridiag
-	implicit none
+    implicit none
     integer, parameter  :: dp = kind(1.d0)
-	Complex (kind = dp), Allocatable :: m_diag(:), upper(:), lower(:)
 	
-contains      
-   subroutine pretty_print()          
-   	do i = size(lower)
-   		print *, "The entry for the upper diagonal is"
-   		print *, upper(i)
-   		print *, "The entry for the lower diagonal is"
-   		print *, lower(i)
-   		print *, "The entry for the middle diagonal is"	
-   		print *, m_diag(i)
-   		if i = size(lower) - 1 then
-   			print *, "The last entry in the main diagonal is"
-   			print *, m_diag(i + 1)
-   		end if
-   end subroutine pretty_print
-   
+    !****************************************
+    !				type trid				*
+    !****************************************
+    !This is a data type that we've defined
+    type trid
+        complex(kind=dp), allocatable :: diag(:), upper(:), lower(:)
+    end type trid
+contains
+	
+    !****************************************
+    !				print trid				*
+    !****************************************
+    subroutine print_trid(a,n)
+        implicit none
+        ! argument variables
+        integer         :: n
+        type(trid)      :: a
+        ! local variables
+        integer         :: i
+			
+        ! print statements
+        write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%diag(1), a%upper(1)
+        do i=2,n-1
+            write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%lower(i-1), a%diag(i), a%upper(i)
+        end do
+        write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%lower(n-1), a%diag(n)
+    end subroutine print_trid
     
-   subroutine randomize(size)          
-   	!allocate memory 
-   	allocate(m_diag) 
-	do i = 1, 5
-		m_diag(i) = i + 1
-	end do
-	
-	allocate(upper)
-	allocate(lower)
-	do i = 1, 4
-		upper(i) = i + 1
-		lower(i) = i + 1
-		
-	end do  
-   end subroutine randomize	
-
+    !*************************************
+    !       scalar multiplication        *
+    !*************************************
+    !    returns the value of a tridiagonal
+    !           times a scalar           *          
+    !*************************************
+    function s_mult(a, c) result(comp)
+        implicit none 
+        ! argument variables
+        integer         :: c
+        type(trid)      :: a
+        !local variables
+        integer         :: i
+        !return variables 
+        type(trid)      :: comp
+            
+        allocate(comp%diag(size(a%diag)), comp%upper(size(a%upper)), comp%lower(size(a%lower)))
+        
+        do i = 1, size(a%diag) - 1
+            comp%lower(i) = a%lower(i) * c
+            comp%upper(i) = a%upper(i) * c
+            comp%diag(i) = a%diag(i) * c
+        end do
+        comp%diag(i + 1) = a%diag(i + 1) * c
+        return
+    end function
 end module tridiag
