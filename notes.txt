@@ -27,3 +27,5 @@ You compile the module and the driver in the same line
 !Questions
 
 Should scalar multiplication change the matrix or just return the new value
+Throwing/handling errors?
+Not sure why size was an argument of print method, could easily do it without.
