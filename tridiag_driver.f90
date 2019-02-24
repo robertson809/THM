@@ -3,7 +3,7 @@ program tridiag_driver
     !loop counter
     integer :: i 
     !tridiagonal matrix polynomial
-    type(trid) :: a, b, c
+    type(trid) :: a, b, c, d
     type(trid_mp)  ::mp
 	
 	!allocating arrays
@@ -15,28 +15,33 @@ program tridiag_driver
         a%upper(i) = i
         a%lower(i) = i
     end do
-        
-    a%diag(5) = 5
-    call print_trid(a)
-    
-    write(*,'(A)') 'That was A.'
-    
-    b = s_mult(a, 5 + 0i) 
-    call print_trid(a)
-    
-    write(*,'(A)') 'That was A * 5.'
-
+    a%diag(5) = 5 
+    b = s_mult(a, (5.0D+00,0.0D+00)) 
     c = m_add(a, b)
-    call print_trid(b)
-    
-    write(*,'(A)') 'That was 10A.'
-    
-    
-    
     !create a matrix polynomial
+    allocate(mp%coef(3))
+    !put coefficients in the mp
+    mp%coef(1) = a
+    mp%coef(2) = b
+    mp%coef(3) = c
     
-    allocate(mp%main(3))
+    write(*, '(A)') 'Printing A'
+    call print_trid(a)
+    write(*, '(A)') new_line('A')
     
+    write(*, '(A)') 'Printing B'
+    call print_trid(b)
+    write(*, '(A)') new_line('A')
     
+    write(*, '(A)') 'Printing C'
+    call print_trid(c)
+    write(*, '(A)') new_line('A')
+    
+    !test Horner's method
+    d = horner((3.0D+00,0.0D+00), mp)
+    call print_trid(d)
+    write(*, '(A)') 'That was mp(3)'
+        
     deallocate(a%diag, a%upper, a%lower)
+    deallocate(mp%coef)
 end program tridiag_driver

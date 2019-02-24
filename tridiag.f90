@@ -135,17 +135,17 @@ contains
         !local variables
         integer             :: i
         integer             :: degree
-        type(trid)          :: temp
         !return variablescoef
         type(trid)          :: comp
             
         degree = size(mp%coef)
-        
+
         !horner's method
-        temp = mp%coef(1)
+        comp = mp%coef(1)
         do i = 2, degree
-            temp = m_add(mp%coef(i), s_mult(temp, x))
+            comp = m_add(mp%coef(i), s_mult(comp, x))
         end do
+        
     end function
     
 end module tridiag
