@@ -18,6 +18,7 @@ Questions and Notes
 ! 1.d0 is a intrinsic fortran double
 ! 1.e0 is an intrinsic fortran single
 ! parameter tag makes it a final, it doesn't change throughout
+! four parts of fortran code: function, program, subroutine, and module
 !End Notes
 
 To get lots of warnings, use gfortran -Wall tridiag.f90 tridiag_driver.f90 
@@ -28,4 +29,11 @@ You compile the module and the driver in the same line
 
 Should scalar multiplication change the matrix or just return the new value
 Throwing/handling errors?
+
 Not sure why size was an argument of print method, could easily do it without.
+
+How do you create an allocatable array of user defined data types?
+
+Should we assume that there's decreasing degree matrix polynomials, or should entry in the MP array include the degree of the coefficient
+
+Should I do Horner's recursively?
