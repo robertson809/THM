@@ -17,6 +17,8 @@ module tridiag
     !This is a tridiagonal matrix polynoial
     type trid_mp
         type(trid), allocatable :: coef(:)
+        integer                 :: size
+        integer                 :: degree
     end type trid_mp
     
 contains
@@ -61,59 +63,33 @@ contains
         end do
     end subroutine print_trid_mp
     
-    !*************************************
-    !       scalar multiplication        *
-    !*************************************
-    !    returns the value of a tridiagonal
-    !           times a scalar           *          
-    !*************************************
-    function s_mult(tri, c) result(comp)
-        implicit none 
-        ! argument variables
-        complex(kind = dp)         :: c
-        type(trid)                 :: tri
-        !local variables
-        integer                    :: i
-        !return variables 
-        type(trid)                 :: comp
-            
-        allocate(comp%diag(size(tri%diag)), comp%upper(size(tri%upper)), comp%lower(size(tri%lower)))
-        
-        do i = 1, size(tri%upper)
-            comp%lower(i) = tri%lower(i) * c
-            comp%upper(i) = tri%upper(i) * c
-            comp%diag(i) = tri%diag(i) * c
-        end do
-        comp%diag(size(tri%diag)) = tri%diag(size(tri%diag)) * c
-        return
-    end function
-    
-    !*************************************
-    !           matrix addition          *
-    !*************************************
-    !    returns the value of a tridiagonal
-    !           times a scalar           *          
-    !*************************************
-    function m_add(a, b) result(comp)
+    !****************************************************************
+    !                   Performs the horners step                   *
+    !****************************************************************
+    !                                                               *
+    ! @param coef - the current coefficient in the matrix polynomial*
+    ! @param x - the scalar at which the polynomial is being        *
+    ! evaluated                                                     *
+    ! @param comp - the running computation in horner's method      *
+    !****************************************************************
+    subroutine horner_step(coef, x, comp)
         implicit none
-        !argument variables
-        type(trid)      :: a, b
-        !local variables
-        integer        :: i
-        !return variables
-        type(trid)      :: comp
-            
-        allocate(comp%diag(size(a%diag)), comp%upper(size(a%upper)), comp%lower(size(a%lower)))
+        ! argument variables
+        type(trid)               :: coef
+        complex(kind=dp)       :: x
+        type(trid)               :: comp
+        ! local variables
+        integer                  :: i
         
-        do i = 1, size(a%lower)
-            comp%lower(i) = a%lower(i) + b%lower(i)
-            comp%upper(i) = a%upper(i) + b%upper(i)
-            comp%diag(i) = a%diag(i) + b%diag(i)
+        !Horner step
+        do i = 1, comp%size - 1
+                comp%lower(i) = (comp%lower(i) * x) + coef%lower(i)
+                comp%diag(i) = (comp%diag(i) * x) + coef%lower(i)
+                comp%upper(i) = (comp%upper(i) * x) + coef%lower(i)
         end do
-        comp%diag(size(a%diag)) = a%diag(size(a%diag)) + b%diag(size(a%diag))
+        comp%diag(comp%size) = (comp%diag(comp%size) * x) + coef
         
-        return
-    end function
+    end subroutine
     
     !*****************************************************************
     !                       horner's method for                      *
@@ -124,7 +100,7 @@ contains
     !                                                                *
     !  @param x - scalar at which to evaluate the MP                 *
     !  @param a - matrix polynomial, assumes a list of tridiagonal   *
-    !       matrices of data type trid, in *decreasing* degree       *
+    !       matrices of data type trid, in *increasing* degree       *
     !  @return comp - the matrix output                              *                                                 
     !*****************************************************************
     function horner(x, mp) result(comp)
@@ -135,15 +111,14 @@ contains
         !local variables
         integer             :: i
         integer             :: degree
-        !return variablescoef
+        !return variables
         type(trid)          :: comp
-            
-        degree = size(mp%coef)
 
         !horner's method
-        comp = mp%coef(1)
-        do i = 2, degree
-            comp = m_add(mp%coef(i), s_mult(comp, x))
+        comp = mp%coef(degree + 1)
+        do i = mp%degree, 1, -1 
+            !this function updates comp
+            call horner_step(mp%coef(i), x, comp)
         end do
         
     end function

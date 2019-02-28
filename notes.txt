@@ -32,8 +32,18 @@ Throwing/handling errors?
 
 Not sure why size was an argument of print method, could easily do it without.
 
-How do you create an allocatable array of user defined data types?
-
 Should we assume that there's decreasing degree matrix polynomials, or should entry in the MP array include the degree of the coefficient
 
 Should I do Horner's recursively?
+
+
+Notes 2/28
+Allocate one new comp tridiagonal inside of horner's method, and use that, and then throw it away. Make sure that the degree is correct. 
+
+Make the size and degree instance values of the tridiagonal matrix polynomial. 
+
+Test on a matrix polynomial with known eigenvalues, and see how it works. For a 10x10 quadratic, there are 20 eigenvalues. Test on all twenty of these and see how close I am to zero. 
+
+For an algorithm to work, it should have good stopping criteria and good initial estimates.
+
+Big update: We are going to put the add and multiply methods inside a subroutine that updates the current value of Horner's method. So we lose modularity, but we never have to allocate anything. We just pass the coefficient, the current value, and the scalar, and do all the addition and multiplication inside there, and never allocate anything. 

@@ -24,6 +24,8 @@ program tridiag_driver
     mp%coef(1) = a
     mp%coef(2) = b
     mp%coef(3) = c
+    mp%size = 5
+    mp%degree = 2
     
     write(*, '(A)') 'Printing A'
     call print_trid(a)
