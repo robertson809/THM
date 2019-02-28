@@ -1,0 +1,84 @@
+%%%%%%%%%%%%%%%%%%%%%%%comp_roots.tex %%%%%%%%%%%%%%%%%%%%%%%%%
+%																					
+% On Hyman's Method and the Tridiagonal Polynomial Eigenvalue Problem
+% Thomas R. Cameron and Michael Robertson
+% Submitted to SIMAX
+% 2019/DATE
+%																					
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[review,onefignum,onetabnum]{siamart171218}
+\usepackage{lipsum}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{algorithmic}
+\ifpdf
+  \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
+\else
+  \DeclareGraphicsExtensions{.eps}
+\fi
+
+\newlength\myindent
+\setlength\myindent{2em}
+\newcommand\bindent{%
+  \begingroup
+  \setlength{\itemindent}{\myindent}
+  \addtolength{\algorithmicindent}{\myindent}
+}
+\newcommand\eindent{\endgroup}
+
+\usepackage{mathtools}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\usepackage{enumitem}
+\setlist[enumerate]{leftmargin=.5in}
+\setlist[itemize]{leftmargin=.5in}
+
+\headers{Tridiagonal Polynomial Eigenvalue Problem}{T. R. Cameron and M. Robertson}
+
+\title{On Hyman's Method and the Tridiagonal Polynomial Eigenvalue Problem\thanks{Submitted to the editors DATE.}}
+
+\author{Thomas R. Cameron\thanks{Davidson College, Davidson, NC
+  (\email{thcameron@davidson.edu}).}
+\and Michael Robertson\thanks{Undergraduate research.}}
+
+\usepackage{amsopn}
+\DeclareMathOperator{\fl}{fl}
+
+\ifpdf
+\hypersetup{
+  pdftitle={On Hyman's Method and the Tridiagonal Eigenvalue Problem},
+  pdfauthor={Thomas R. Cameron and Michael Robertson}
+}
+\fi
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+In this article, 
+\end{abstract}
+
+\begin{keywords}
+  example, \LaTeX
+\end{keywords}
+
+\begin{AMS}
+  68Q25, 68R10, 68U05
+\end{AMS}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%						Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%						References
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{siamplain}
+\bibliography{../Bibliography}
+
+\end{document}
