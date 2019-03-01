@@ -52,14 +52,17 @@ contains
         type(trid_mp)       :: a
         !local variables
         integer             :: i
-        integer             :: n
-        n = size(a%coef)
+        integer             :: degree
+        degree = size(a%coef)
         
         !printing
-        do i = 1, n
+        do i = 1, degree
             call print_trid(a%coef(i))
-            write(*, '(A)') 'x'
-            write(*, '(A)') '+'
+            !write (*,'(A, F8.3)') 'The answer is x = ', degree
+            write(*,'(A, I1)') 'x^', i
+            if (i /= degree) then
+                write(*, '(A)') '+'
+            end if
         end do
     end subroutine print_trid_mp
     
@@ -72,22 +75,23 @@ contains
     ! evaluated                                                     *
     ! @param comp - the running computation in horner's method      *
     !****************************************************************
-    subroutine horner_step(coef, x, comp)
+    subroutine horner_step(coef, x, comp, size)
         implicit none
         ! argument variables
         type(trid)               :: coef
-        complex(kind=dp)       :: x
+        complex(kind=dp)         :: x
         type(trid)               :: comp
+        integer                  :: size
         ! local variables
         integer                  :: i
         
         !Horner step
-        do i = 1, comp%size - 1
+        do i = 1, size - 1
                 comp%lower(i) = (comp%lower(i) * x) + coef%lower(i)
                 comp%diag(i) = (comp%diag(i) * x) + coef%lower(i)
                 comp%upper(i) = (comp%upper(i) * x) + coef%lower(i)
         end do
-        comp%diag(comp%size) = (comp%diag(comp%size) * x) + coef
+        comp%diag(size) = (comp%diag(size) * x) + coef%diag(size)
         
     end subroutine
     
@@ -110,15 +114,14 @@ contains
         type(trid_mp)       :: mp
         !local variables
         integer             :: i
-        integer             :: degree
         !return variables
         type(trid)          :: comp
 
         !horner's method
-        comp = mp%coef(degree + 1)
+        comp = mp%coef(mp%degree + 1)
         do i = mp%degree, 1, -1 
             !this function updates comp
-            call horner_step(mp%coef(i), x, comp)
+            call horner_step(mp%coef(i), x, comp, mp%size)
         end do
         
     end function
