@@ -46,4 +46,12 @@ Test on a matrix polynomial with known eigenvalues, and see how it works. For a 
 
 For an algorithm to work, it should have good stopping criteria and good initial estimates.
 
-Big update: We are going to put the add and multiply methods inside a subroutine that updates the current value of Horner's method. So we lose modularity, but we never have to allocate anything. We just pass the coefficient, the current value, and the scalar, and do all the addition and multiplication inside there, and never allocate anything. 
+Big update: We are going to put the add and multiply methods inside a subroutine that updates the current value of Horner's method. So we lose modularity, but we never have to allocate anything. We just pass the coefficient, the current value, and the scalar, and do all the addition and multiplication inside there, and never allocate anything.
+
+3/21 Meeting
+
+In the future I shouldn't name variables "size" and "degree," I should name them "m" and "n"
+
+Test on a matrix polynomial with known eigenvalues, and see how it works. For a 10x10 quadratic, there are 20 eigenvalues. Test on all twenty of these and see how close I am to zero. 
+
+Because we can already do scalar times array, we don't need a subroutine to do the horner's step, just multiply the entire array in a for loop 

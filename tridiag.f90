@@ -66,35 +66,7 @@ contains
         end do
     end subroutine print_trid_mp
     
-    !****************************************************************
-    !                   Performs the horners step                   *
-    !****************************************************************
-    !                                                               *
-    ! @param coef - the current coefficient in the matrix polynomial*
-    ! @param x - the scalar at which the polynomial is being        *
-    ! evaluated                                                     *
-    ! @param comp - the running computation in horner's method      *
-    !****************************************************************
-    subroutine horner_step(coef, x, comp, size)
-        implicit none
-        ! argument variables
-        type(trid)               :: coef
-        complex(kind=dp)         :: x
-        type(trid)               :: comp
-        integer                  :: size
-        ! local variables
-        integer                  :: i
-        
-        
-        !Horner step
-        do i = 1, size - 1
-                comp%lower(i) = (comp%lower(i) * x) + coef%lower(i)
-                comp%diag(i) = (comp%diag(i) * x) + coef%lower(i)
-                comp%upper(i) = (comp%upper(i) * x) + coef%lower(i)
-        end do
-        comp%diag(size) = (comp%diag(size) * x) + coef%diag(size)
-        
-    end subroutine
+
     
     !*****************************************************************
     !                       horner's method for                      *
@@ -108,7 +80,7 @@ contains
     !       matrices of data type trid, in *increasing* degree       *
     !  @return comp - the matrix output                              *                                                 
     !*****************************************************************
-    function horner(x, mp) result(comp)
+    function triHorner(x, mp) result(comp)
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
@@ -125,7 +97,7 @@ contains
             comp%diag = comp%diag * x + mp%coef(i)%diag
             comp%upper = comp%upper * x + mp%coef(i)%upper
         end do
-        
+        return
     end function
     
 end module tridiag
