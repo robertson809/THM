@@ -55,3 +55,23 @@ In the future I shouldn't name variables "size" and "degree," I should name them
 Test on a matrix polynomial with known eigenvalues, and see how it works. For a 10x10 quadratic, there are 20 eigenvalues. Test on all twenty of these and see how close I am to zero. 
 
 Because we can already do scalar times array, we don't need a subroutine to do the horner's step, just multiply the entire array in a for loop 
+
+Hyman's method for Tridiagonal Problems
+
+Part 1 for next week
+Look at subroutine check_lag 224-233, and use that to implement horner's method to get the derivate and the second derivative because we need this for hyman's. 
+
+Part 2 for next week
+Horner's method is prone to overflow, esp if the number and coefficients are greater than one
+
+Reversal polynomial 
+p_r(z) = z^mp(1/z)
+= a_m + a_m-1z + .... + a_0z^m
+
+So just start with a_0 in Horner's method, not a big deal to switch.
+
+Can also see on the FPML, r_check_lag does this line 174-185. 
+
+Doing it this way avoids overflow if z> 1
+
+So just make another horner's method to evaluate the reversal, both should be subroutines, both should have h, h', and h''. They have always been called a, b, and c. They should be passed a, b, and c, and then change them, since it's a subroutine. 
