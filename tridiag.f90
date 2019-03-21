@@ -5,7 +5,7 @@ module tridiag
     !****************************************
     !				type trid				*
     !****************************************
-    !This is a data type that we've defined, with the tre
+    ! This is a data type that we've defined, with the tre
     type trid
         complex(kind=dp), allocatable :: diag(:), upper(:), lower(:)
     end type trid
@@ -14,7 +14,7 @@ module tridiag
     !				type trid_mp		    *
     !       a tridiagonal matrix polynomial	*
     !****************************************
-    !This is a tridiagonal matrix polynoial
+    ! This is a tridiagonal matrix polynoial
     type trid_mp
         type(trid), allocatable :: coef(:)
     end type trid_mp
