@@ -85,6 +85,7 @@ contains
         ! local variables
         integer                  :: i
         
+        
         !Horner step
         do i = 1, size - 1
                 comp%lower(i) = (comp%lower(i) * x) + coef%lower(i)
@@ -120,8 +121,9 @@ contains
         !horner's method
         comp = mp%coef(mp%degree + 1)
         do i = mp%degree, 1, -1 
-            !this function updates comp
-            call horner_step(mp%coef(i), x, comp, mp%size)
+            comp%lower = comp%lower *x + mp%coef(i)%lower
+            comp%diag = comp%diag * x + mp%coef(i)%diag
+            comp%upper = comp%upper * x + mp%coef(i)%upper
         end do
         
     end function
