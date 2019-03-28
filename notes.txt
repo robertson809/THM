@@ -67,3 +67,8 @@ Can also see on the FPML, r_check_lag does this line 174-185.
 Doing it this way avoids overflow if z> 1
 
 So just make another horner's method to evaluate the reversal, both should be subroutines, both should have h, h', and h''. They have always been called a, b, and c. They should be passed a, b, and c, and then change them, since it's a subroutine. 
+
+
+3/28
+
+Allocate memory for the compD1, compd2 with their own statements, don't just point them to existing arrays. In the end, this won't matter, because everything is going to become a subroutine in the long run.  So for now we'll allocate and deallocate them at the beginning and the end. Also make memory for b and c in the driver line 23 in tridiag_driver

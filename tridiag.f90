@@ -99,16 +99,20 @@ contains
         type(trid)          :: compD1
         type(trid)          :: triHorner(3)
             
+            
+        
         !initial coefficients, initialize the derivatives to 0
         comp = mp%coef(mp%degree + 1)
         !get 0 arrays for the first and second derivatives
         
         !first derivative, three trid data types, all zero, of the right length (size)
-        compD1%upper = mp%coef(1)%lower * 0
+        allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
+        compD1%upper = cmplx(0,0,kind = dp)
         compD1%diag = mp%coef(1)%diag * 0
         compD1%lower = mp%coef(1)%upper * 0
         
         !second derivative
+        allocate(compD2%upper(mp%size -1), compD2%diag(mp%size), compD2%lower(mp%size -1))
         compD2%upper = mp%coef(1)%lower * 0
         compD2%diag = mp%coef(1)%diag * 0
         compD2%lower = mp%coef(1)%upper * 0
@@ -151,8 +155,9 @@ contains
             comp%upper = comp%upper * x + mp%coef(i)%upper
             end do
         end if
-        write(*, '(A)') 'Line 134'
+        write(*, '(A)') 'Line 157'
         triHorner = [comp, compD1, compD2]
+        write(*, '(A)') 'Line 159'
         return
     end function
     
