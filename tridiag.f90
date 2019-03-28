@@ -76,27 +76,83 @@ contains
     !    for a given scalar input                                    *
     !                                                                *
     !  @param x - scalar at which to evaluate the MP                 *
-    !  @param a - matrix polynomial, assumes a list of tridiagonal   *
+    !  @param mp - matrix polynomial, assumes a list of tridiagonal  *
     !       matrices of data type trid, in *increasing* degree       *
-    !  @return comp - the matrix output                              *                                                 
+    !       e.g. A_0, A_1, A_2                                       *
+    !  @return comp - [comp, compD1, compD1], the value of a function*
+    !                   plus the values of its derivatives. In the   *
+    !                   future, these will likely be passed in       *
+    !                   as the running values of an outside program  *
+    !                                                                *                                                 
     !*****************************************************************
-    function triHorner(x, mp) result(comp)
+    function triHorner(x, mp) 
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
         type(trid_mp)       :: mp
         !local variables
-        integer             :: i
+        integer             :: i, xx
+        real, dimension(2) :: parts
         !return variables
         type(trid)          :: comp
-
-        !horner's method
+        type(trid)          :: compD2
+        type(trid)          :: compD1
+        type(trid)          :: triHorner(3)
+            
+        !initial coefficients, initialize the derivatives to 0
         comp = mp%coef(mp%degree + 1)
-        do i = mp%degree, 1, -1 
-            comp%lower = comp%lower *x + mp%coef(i)%lower
+        !get 0 arrays for the first and second derivatives
+        
+        !first derivative, three trid data types, all zero, of the right length (size)
+        compD1%upper = mp%coef(1)%lower * 0
+        compD1%diag = mp%coef(1)%diag * 0
+        compD1%lower = mp%coef(1)%upper * 0
+        
+        !second derivative
+        compD2%upper = mp%coef(1)%lower * 0
+        compD2%diag = mp%coef(1)%diag * 0
+        compD2%lower = mp%coef(1)%upper * 0
+        
+        !horner's method
+        
+        !evaluate the reverseal polynomial if |x| > 1
+        if (dot_product(transfer(x, parts), transfer(x, parts)) > 1) then 
+            xx = 1/x
+            !second derivative
+            compD2%lower = compD2%lower * xx + compD1%lower
+            compD2%diag = compD2%diag * xx + compD1%lower
+            compD2%upper = compD2%upper * xx + compD1%lower
+            
+            !first derivative
+            compD1%lower = compD1%lower * xx + comp%lower
+            compD1%diag = compD1%diag * xx + comp%lower
+            compD1%upper = compD1%upper * xx + comp%lower
+            
+            !full value
+            comp%lower = comp%lower * xx + mp%coef(i)%lower
+            comp%diag = comp%diag * xx + mp%coef(i)%diag
+            comp%upper = comp%upper * xx + mp%coef(i)%upper
+        else 
+            do i = mp%degree, 1, -1 
+            
+            !second derivative
+            compD2%lower = compD2%lower * x + compD1%lower
+            compD2%diag = compD2%diag * x + compD1%lower
+            compD2%upper = compD2%upper * x + compD1%lower
+            
+            !first derivative
+            compD1%lower = compD1%lower * x + comp%lower
+            compD1%diag = compD1%diag * x + comp%lower
+            compD1%upper = compD1%upper * x + comp%lower
+            
+            !full value
+            comp%lower = comp%lower * x + mp%coef(i)%lower
             comp%diag = comp%diag * x + mp%coef(i)%diag
             comp%upper = comp%upper * x + mp%coef(i)%upper
-        end do
+            end do
+        end if
+        write(*, '(A)') 'Line 134'
+        triHorner = [comp, compD1, compD2]
         return
     end function
     

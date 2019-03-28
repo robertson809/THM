@@ -25,17 +25,6 @@ To get lots of warnings, use gfortran -Wall tridiag.f90 tridiag_driver.f90
 You compile the module and the driver in the same line
 
 
-!Questions
-
-Should scalar multiplication change the matrix or just return the new value
-Throwing/handling errors?
-
-Not sure why size was an argument of print method, could easily do it without.
-
-Should we assume that there's decreasing degree matrix polynomials, or should entry in the MP array include the degree of the coefficient
-
-Should I do Horner's recursively?
-
 
 Notes 2/28
 Allocate one new comp tridiagonal inside of horner's method, and use that, and then throw it away. Make sure that the degree is correct. 
@@ -48,7 +37,10 @@ For an algorithm to work, it should have good stopping criteria and good initial
 
 Big update: We are going to put the add and multiply methods inside a subroutine that updates the current value of Horner's method. So we lose modularity, but we never have to allocate anything. We just pass the coefficient, the current value, and the scalar, and do all the addition and multiplication inside there, and never allocate anything.
 
-3/21 Meeting
+
+
+
+Notes 3/21
 
 In the future I shouldn't name variables "size" and "degree," I should name them "m" and "n"
 
