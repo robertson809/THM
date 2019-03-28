@@ -92,7 +92,6 @@ contains
         type(trid_mp)       :: mp
         !local variables
         integer             :: i, xx
-        real, dimension(2) :: parts
         !return variables
         type(trid)          :: comp
         type(trid)          :: compD2
@@ -104,7 +103,6 @@ contains
         !initial coefficients, initialize the derivatives to 0
         comp = mp%coef(mp%degree + 1)
         !get 0 arrays for the first and second derivatives
-        
         !first derivative, three trid data types, all zero, of the right length (size)
         allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
         compD1%upper = cmplx(0,0,kind = dp)
@@ -118,41 +116,40 @@ contains
         compD2%lower = mp%coef(1)%upper * 0
         
         !horner's method
-        
         !evaluate the reverseal polynomial if |x| > 1
-        if (dot_product(transfer(x, parts), transfer(x, parts)) > 1) then 
-            xx = 1/x
-            !second derivative
-            compD2%lower = compD2%lower * xx + compD1%lower
-            compD2%diag = compD2%diag * xx + compD1%lower
-            compD2%upper = compD2%upper * xx + compD1%lower
-            
-            !first derivative
-            compD1%lower = compD1%lower * xx + comp%lower
-            compD1%diag = compD1%diag * xx + comp%lower
-            compD1%upper = compD1%upper * xx + comp%lower
-            
-            !full value
-            comp%lower = comp%lower * xx + mp%coef(i)%lower
-            comp%diag = comp%diag * xx + mp%coef(i)%diag
-            comp%upper = comp%upper * xx + mp%coef(i)%upper
+        if (abs(x) > 1) then 
+            do i = mp%degree, 1, -1
+                xx = 1/x
+                !second derivative
+                compD2%lower = compD2%lower * xx + compD1%lower
+                compD2%diag = compD2%diag * xx + compD1%lower
+                compD2%upper = compD2%upper * xx + compD1%lower
+                !first derivative
+                compD1%lower = compD1%lower * xx + comp%lower
+                compD1%diag = compD1%diag * xx + comp%lower
+                compD1%upper = compD1%upper * xx + comp%lower
+                !full value
+                comp%lower = comp%lower * xx + mp%coef(i)%lower
+                comp%diag = comp%diag * xx + mp%coef(i)%diag
+                comp%upper = comp%upper * xx + mp%coef(i)%upper
+            end do
         else 
             do i = mp%degree, 1, -1 
+                
+                !second derivative
+                compD2%lower = compD2%lower * x + compD1%lower
+                compD2%diag = compD2%diag * x + compD1%lower
+                compD2%upper = compD2%upper * x + compD1%lower
             
-            !second derivative
-            compD2%lower = compD2%lower * x + compD1%lower
-            compD2%diag = compD2%diag * x + compD1%lower
-            compD2%upper = compD2%upper * x + compD1%lower
+                !first derivative
+                compD1%lower = compD1%lower * x + comp%lower
+                compD1%diag = compD1%diag * x + comp%lower
+                compD1%upper = compD1%upper * x + comp%lower
             
-            !first derivative
-            compD1%lower = compD1%lower * x + comp%lower
-            compD1%diag = compD1%diag * x + comp%lower
-            compD1%upper = compD1%upper * x + comp%lower
-            
-            !full value
-            comp%lower = comp%lower * x + mp%coef(i)%lower
-            comp%diag = comp%diag * x + mp%coef(i)%diag
-            comp%upper = comp%upper * x + mp%coef(i)%upper
+                !full value
+                comp%lower = comp%lower * x + mp%coef(i)%lower
+                comp%diag = comp%diag * x + mp%coef(i)%diag
+                comp%upper = comp%upper * x + mp%coef(i)%upper
             end do
         end if
         !write(*, '(A)') 'Line 157'

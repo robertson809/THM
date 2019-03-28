@@ -71,4 +71,6 @@ So just make another horner's method to evaluate the reversal, both should be su
 
 3/28
 
-Allocate memory for the compD1, compd2 with their own statements, don't just point them to existing arrays. In the end, this won't matter, because everything is going to become a subroutine in the long run.  So for now we'll allocate and deallocate them at the beginning and the end. Also make memory for b and c in the driver line 23 in tridiag_driver
+Allocate memory for the compD1, compd2 with their own statements, don't just point them to existing arrays. In the end, this won't matter, because everything is going to become a subroutine in the long run.  So for now we'll allocate and deallocate them at the beginning and the end. Also make memory for b and c in the driver line 23 in tridiag_driver.
+
+Always use make uninstall before pushing so you don't push up the mod and object files

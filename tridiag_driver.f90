@@ -73,7 +73,7 @@ program tridiag_driver
     
     !test Horner's method
     write(*, '(A)') 'Calling Horners on the MP'
-    output = triHorner((1.0D+00,0.0D+00), mp)
+    output = triHorner(cmplx(1,0, kind = dp), mp)
     write(*, '(A)') new_line('A_2')
     
     write(*, '(A)') 'MP(1)'
