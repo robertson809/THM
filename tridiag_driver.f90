@@ -51,15 +51,19 @@ program tridiag_driver
     
     
     write(*, '(A)') 'Printing A_0'
-    call print_trid(a)
+    call print_trid(a_0)
     write(*, '(A)') new_line('A_0')
     
     write(*, '(A)') 'Printing A_1'
-    call print_trid(b)
+    call print_trid(a_1)
     write(*, '(A)') new_line('A_1')
     
     write(*, '(A)') 'Printing A_2'
-    call print_trid(c)
+    call print_trid(a_2)
+    write(*, '(A)') new_line('A_2')
+    
+    write(*, '(A)') 'Printing A_2'
+    call print_trid(a_3)
     write(*, '(A)') new_line('A_2')
     
     write(*, '(A)') 'Printing MP'
@@ -68,13 +72,23 @@ program tridiag_driver
     
     
     !test Horner's method
-    write(*, '(A)') 'That was mp 2'
-    output = triHorner((1.0D+00,0.0D+00), mp2)
+    write(*, '(A)') 'Calling Horners on the MP'
+    output = triHorner((1.0D+00,0.0D+00), mp)
+    write(*, '(A)') new_line('A_2')
+    
+    write(*, '(A)') 'MP(1)'
     call print_trid(output(1))
+    write(*, '(A)') new_line('A_2')
+    
+    write(*, '(A)') '1st Derivative(1)'
     call print_trid(output(2))
+    write(*, '(A)') new_line('A_2')
+    
+    write(*, '(A)') '2nd Derivative(1)'
     call print_trid(output(3))
-    write(*, '(A)') 'That was mp 2'
+    write(*, '(A)') new_line('A_2')
+
         
-    deallocate(a%diag, a%upper, a%lower)
-    deallocate(mp%coef)
+    deallocate(a_0%lower, a_0%diag, a_0%upper, a_1%lower, a_1%diag, a_1%upper, a_2%lower, a_2%diag, a_2%upper, &
+    a_3%lower, a_3%diag, a_3%upper, mp%coef)
 end program tridiag_driver

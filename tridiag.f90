@@ -155,9 +155,8 @@ contains
             comp%upper = comp%upper * x + mp%coef(i)%upper
             end do
         end if
-        write(*, '(A)') 'Line 157'
+        !write(*, '(A)') 'Line 157'
         triHorner = [comp, compD1, compD2]
-        write(*, '(A)') 'Line 159'
         return
     end function
     
