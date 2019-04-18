@@ -73,4 +73,11 @@ So just make another horner's method to evaluate the reversal, both should be su
 
 Allocate memory for the compD1, compd2 with their own statements, don't just point them to existing arrays. In the end, this won't matter, because everything is going to become a subroutine in the long run.  So for now we'll allocate and deallocate them at the beginning and the end. Also make memory for b and c in the driver line 23 in tridiag_driver.
 
-Always use make uninstall before pushing so you don't push up the mod and object files
+Always use make uninstall before pushing so you don't push up the mod and object files.
+
+Next steps: Make a horners and a horners reversal, so that you don't have a branch deep in the code. 
+
+Look into how to load in problems from a csv file. Look in FPML line 30. tridiag driver [filename]. Look at lines 30-39. Star means read in the entire thing. Start with reading in real. Expect numbers in the form (real, imaginary). First column is always lower, second column is middle, third column is all the upper. Because it knows the size, it will know how far to read down each column before moving to the next coefficient. 
+
+Nick314159/LMPEP shows how to format matrices, in accuracy_test driver it shows how to read them in. In line 76. Set lower main upper as the rows, then have 3*(degree + 1) rows. 
+
