@@ -1,12 +1,49 @@
 program tridiag_driver
     use tridiag
-    !loop counter
-    integer :: i
+    !loop counter and input
+    integer :: i, j, k, deg, size
     !tridiagonal matrix polynomial
     type(trid) :: a_3, a_2, a_1, a_0
     type(trid) :: output(3)
-    type(trid_mp)  ::mp
-    complex(kind=dp)        :: k
+    type(trid_mp)     ::mp
+    character(len=32)    :: arg, poly_file
+    integer :: test
+    complex(kind=dp)        :: aux
+    
+    ! load polynomial
+    read(arg, '(A)') poly_file
+    !don't really get what's going on here
+    write(*,*) 'Starting: Running on '//poly_file
+    !goes to poly_file, but defaults to data_files if "problem" with poly_file
+    !unit = 1 is the number associated with the file
+    open(unit=1,file="testTRID.txt", status='OLD')
+    read(1,*) deg
+    read(1,*) size 
+    print *, deg, size
+    allocate(mp%coef(deg))
+    do i = 1, deg + 1
+        allocate(mp%coef(i)%diag(size), mp%coef(i)%upper(size - 1), mp%coef(i)%lower(size - 1))
+    end do 
+        
+    !allocate(p(deg+1), roots(deg), berr(deg), cond(deg), conv(deg))
+    !read through every matrix
+    do i = 1, deg + 1
+        !upper
+        print * , "ehllo"
+        do k=1, size -1
+            read(1,*) test
+            print *, test
+            !mp%coef(i)%upper(k)
+        end do
+        !diag
+        do k=1, size
+            read(1,*) mp%coef(i)%diag(k)
+        end do
+        !lower
+        do k=1, size -1
+            read(1,*) mp%coef(i)%lower(k)   
+        end do
+    end do
     
     
     !Derivative tester
