@@ -2,18 +2,21 @@ module tridiag
     implicit none
     integer, parameter  :: dp = kind(1.d0)
 	
-    !****************************************
-    !				type trid				*
-    !****************************************
-    ! This is a data type that we've defined, with the tre
+    !****************************************************************
+    !				           Type trid                            *
+    !                      Tridiagonal Matrix                       *
+    !   Can contain values as a scalar or variable coefficients     *
+    !****************************************************************
     type trid
         complex(kind=dp), allocatable :: diag(:), upper(:), lower(:)
     end type trid
     
-    !****************************************
-    !				type trid_mp		    *
-    !       a tridiagonal matrix polynomial	*
-    !****************************************
+    !**************************************************************
+    !				           Type trid_mp		                  *
+    !                Tridiagonal Matrix Polynomial	              *
+    !   An array of variable matrix polynomials contains values   *
+    ! for size and degree, which could be removed to save memory  *
+    !**************************************************************
     ! This is a tridiagonal matrix polynoial
     type trid_mp
         type(trid), allocatable :: coef(:)
@@ -22,9 +25,10 @@ module tridiag
     end type trid_mp
     
 contains
-    !****************************************
-    !				print trid				*
-    !****************************************
+    !**************************************************************
+    !				Subroutine print_trid                         
+    !   Prints a tridiagonal matrix diagonal by diagonal          
+    !**************************************************************
     subroutine print_trid(a)
         implicit none
         ! argument variables
@@ -43,9 +47,11 @@ contains
         write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%lower(n-1), a%diag(n)
     end subroutine print_trid
     
-    !****************************************
-    !				print trid_mp			*
-    !****************************************
+    !**************************************************************
+    !				Subroutine print_trid_mp                       
+    !   Prints a tridiagonal matrix polynomial as additions of 
+    !   matrix polynomials        
+    !**************************************************************
     subroutine print_trid_mp(a)
         implicit none
         !arguement variables
@@ -69,7 +75,7 @@ contains
 
     
     !*****************************************************************
-    !                       reversal horner's method for             *
+    !                       Reversal horner's method for             *
     !                       matrix polynomials                       *
     !*****************************************************************
     !    evaluates a matrix polynomial                               *
@@ -104,14 +110,14 @@ contains
         !first derivative, three trid data types, all zero, of the right length (size)
         allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
         compD1%upper = cmplx(0,0,kind = dp)
-        compD1%diag = mp%coef(1)%diag * 0
-        compD1%lower = mp%coef(1)%upper * 0
+        compD1%diag = cmplx(0,0, kind = dp)
+        compD1%lower = cmplx(0,0, kind = dp)
         
         !second derivative
         allocate(compD2%upper(mp%size -1), compD2%diag(mp%size), compD2%lower(mp%size -1))
-        compD2%upper = mp%coef(1)%lower * 0
-        compD2%diag = mp%coef(1)%diag * 0
-        compD2%lower = mp%coef(1)%upper * 0
+        compD2%upper = cmplx(0,0, kind = dp)
+        compD2%diag = cmplx(0,0, kind = dp)
+        compD2%lower = cmplx(0,0, kind = dp)
         
         !horner's method
         !evaluate the reverseal polynomial
@@ -151,7 +157,7 @@ contains
     !                   plus the values of its derivatives. In the   *
     !                   future, these will likely be passed in       *
     !                   as the running values of an outside program  *
-    !                                                                *                                                 
+    !                                                                *                             
     !*****************************************************************
     function triHorner(x, mp) 
         implicit none
@@ -167,42 +173,73 @@ contains
         type(trid)          :: triHorner(3)
             
             
-        
-        !initial coefficients, initialize the derivatives to 0
-        comp = mp%coef(mp%degree + 1)
-        !get 0 arrays for the first and second derivatives
         !first derivative, three trid data types, all zero, of the right length (size)
         allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
-        compD1%upper = cmplx(0,0,kind = dp)
-        compD1%diag = mp%coef(1)%diag * 0
-        compD1%lower = mp%coef(1)%upper * 0
+        compD1%lower = cmplx(0,0,kind = dp) !sets everything in the array to zero
+        compD1%diag = cmplx(0,0,kind = dp) 
+        compD1%upper = cmplx(0,0,kind = dp) 
         
+
         !second derivative
         allocate(compD2%upper(mp%size -1), compD2%diag(mp%size), compD2%lower(mp%size -1))
-        compD2%upper = mp%coef(1)%lower * 0
-        compD2%diag = mp%coef(1)%diag * 0
-        compD2%lower = mp%coef(1)%upper * 0
+        compD2%lower = cmplx(0,0,kind = dp)
+        compD2%diag = cmplx(0,0,kind = dp)
+        compD2%upper = cmplx(0,0,kind = dp)
         
         !horner's method
+        comp = mp%coef(mp%degree + 1)
         do i = mp%degree, 1, -1 
             !second derivative
             compD2%lower = compD2%lower * x + compD1%lower
-            compD2%diag = compD2%diag * x + compD1%lower
-            compD2%upper = compD2%upper * x + compD1%lower
-        
+            compD2%diag = compD2%diag * x + compD1%diag
+            compD2%upper = compD2%upper * x + compD1%upper
+                   
             !first derivative
             compD1%lower = compD1%lower * x + comp%lower
-            compD1%diag = compD1%diag * x + comp%lower
-            compD1%upper = compD1%upper * x + comp%lower
+            compD1%diag = compD1%diag * x + comp%diag
+            compD1%upper = compD1%upper * x + comp%upper
         
             !full value
             comp%lower = comp%lower * x + mp%coef(i)%lower
             comp%diag = comp%diag * x + mp%coef(i)%diag
             comp%upper = comp%upper * x + mp%coef(i)%upper
         end do
+        compD2%lower = compD2%lower * 2.0
+        compD2%diag = compD2%diag * 2.0
+        compD2%upper = compD2%upper * 2.0
         
         triHorner = [comp, compD1, compD2]
         return
     end function
     
+    !*****************************************************************
+    !                       Back substituion for                     *
+    !               "upper" tridiagonal matrix polynomials           *
+    !*****************************************************************
+    !    Solves Ax = y, where A has three diagonal bands on the main *
+    !    diagonal, the upper diagonal and the "super" upper diagonal *
+    !    written for the R matrix of an upper hessenburg Matrix      *
+    !    Polynomial Hyman's method decomposition. Below, n is the    *
+    !    size of the pre-Hyman's method matrix polynomial.            *
+    !  @param y:  n - 1 vertical vector, where n is the size of the  *
+    !              original matrix polynomial                        *
+    !  @param R(u):  A tridiagonal matrix with entries on the main,  *
+    !                upper and superupper diagonals                  *
+    !  @return y: the solution to the system will be overwritten in  *
+    !              the y parameter                                   *                          
+    !*****************************************************************
+    subroutine triBack(bottom, middle, top, y)
+        implicit none
+        !arguement variables
+        complex(kind=dp) :: bottom(:), middle(:), top(:), y(:)
+        !local variables
+        integer             :: n, i
+        n = size(bottom)
+        y(n) = y(n)/bottom(n) !first case 
+        y(n-1) = (y(n-1) - middle(n-1) * y(n))/bottom(n-1) !second case
+        do i = n-2,1,-1
+            y(i) = (y(i) - top(i)*y(i+2) - middle(i)*y(i+1))/bottom(i)
+        end do     
+        
+    end subroutine triBack
 end module tridiag
