@@ -1,8 +1,51 @@
+!********************************************************************************
+!   Tridiag_driver: Driver Program for tridiag
+!   Author: Michael Robertson, Thomas R. Cameron, Davidson College
+!   Last Modified: 20 May 2019
+!********************************************************************************
+! MIT License
+!
+! Copyright (c) 2019 Michael Robertson, Thomas Cameron
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+! SOFTWARE.
+!********************************************************************************
+!   This module contains the following paramaters, functions, and 
+!   subroutines:
+!       dp: integer paramater for machine-compiler specific double 
+!       precision.
+!
+!       eps: machine-compiler specific double precision unit roundoff.
+!
+!       main: main subroutine for computing roots of polynomial.
+!
+!       triHorner: function for evaluating a tridiagonal matrix polynomial using 
+!                   an adaptation of Horner's method
+!
+!       triBack: subroutine for solving a special upper tridiagonal linear system
+!                  using back substitution
+! 
+!********************************************************************************
 program tridiag_driver
     use tridiag
-    !loop counter
+    ! loop counter
     integer :: i
-    !tridiagonal matrix polynomial
+    ! tridiagonal matrix polynomial
     type(trid) :: a_3, a_2, a_1, a_0, eval
     complex(kind=dp), allocatable :: y(:)
     type(trid) :: output(3)
@@ -10,9 +53,8 @@ program tridiag_driver
     complex(kind=dp)        :: k
     
     
-    !Derivative tester
-    !Create the MP version of (x-1)^3
-	!allocating arrays
+    ! Derivative tester
+    ! create the MP version of (x-1)^3
     allocate(a_3%diag(3), a_3%upper(2), a_3%lower(2))
     allocate(a_2%diag(3), a_2%upper(2), a_2%lower(2))
     allocate(a_1%diag(3), a_1%upper(2), a_1%lower(2))
@@ -20,11 +62,10 @@ program tridiag_driver
     allocate(mp%coef(4))
 
     
-	!putting numbers in the arrays
+	! putting numbers in the arrays
     write(*, '(A)') 'line65'
-    !(x-1)^3 = x^3 -3x^2 +3x - 1
-    do i = 1, 2
-        
+    ! (x-1)^3 = x^3 -3x^2 +3x - 1
+    do i = 1, 2 
         a_0%lower(i) = -1
         a_0%diag(i) = -1
         a_0%upper(i) = -1
@@ -39,15 +80,13 @@ program tridiag_driver
         
         a_3%lower(i) = 1
         a_3%diag(i) = 1
-        a_3%upper(i) = 1
-                 
+        a_3%upper(i) = 1           
     end do
     a_0%diag(3) = -1
     a_1%diag(3) = 3
     a_2%diag(3) = -3
     a_3%diag(3) = 1
     
-    !put coefficients in the mp
     mp%coef(1) = a_0
     mp%coef(2) = a_1
     mp%coef(3) = a_2
@@ -77,7 +116,7 @@ program tridiag_driver
     write(*, '(A)') new_line('A')
     
     
-    !test Horner's method
+    ! Horner's tester
     write(*, '(A)') 'Calling Horners on the MP'
     output = triHorner(cmplx(3,0, kind = dp), mp)
     write(*, '(A)') new_line('A_2')
@@ -94,7 +133,7 @@ program tridiag_driver
     call print_trid(output(3))
     write(*, '(A)') new_line('A_2')
     
-    !make my test case
+    ! Back substitution tester
     allocate(eval%diag(5), eval%lower(4), eval%upper(4))
     eval%diag(1) = 1
     eval%diag(2) = 4
@@ -111,17 +150,16 @@ program tridiag_driver
     eval%upper(4) = 11
     
     n = size(eval%diag)
-    !test back substitution
     allocate(y(n-1)) 
     y = cmplx(0,0,kind = dp)
     y(n-1) = eval%diag(n)
-    y(n-2) = eval%upper(n-1) !get y from the Horner's evaluation
+    y(n-2) = eval%upper(n-1) !from Hyman's decomposition
     
     write(*, '(A)') 'Calling back substitution on MP(3)'
-    call triBack(eval%lower, eval%diag(2:n-1), eval%upper(2:n-2), y)
+    call triBack(eval%lower, eval%diag(2:n-1), eval%upper(2:n-2), y) !from Hyman's decomposition
     write(*, '(A)') 'x, from R(u)x = y from Hymans'
     do i = 1, size(y)
-        write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') y(i)
+        print *, y(i)
     end do
     write(*, '(A)') new_line('A_2')
         
