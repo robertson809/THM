@@ -232,6 +232,10 @@ program tridiag_driver
     call print_trid(output(1))
     write(*, '(A)') new_line('A_2')
     
+    write(*, '(A)') 'MP2''(3)'
+    call print_trid(output(2))
+    write(*, '(A)') new_line('A_2')
+    
     !test matrix multiplication
     allocate(v(3))
     v(1) = 1
@@ -239,7 +243,7 @@ program tridiag_driver
     v(3) = 3
     
     v = triMult(output(1), v)
-    write(*, '(A)') 'Ax = v'
+    write(*, '(A)') 'MP(3)(1,2,3) = '
         do i = 1, size(v)
             print *, v(i)
         end do
@@ -247,12 +251,8 @@ program tridiag_driver
     
     
     !main Hyman tester, with output which is three trids, the value, and first two derivatives
-    y2 = PHyman(output)
-    write(*, '(A)') 'x, from R(u)x = y from outside Hymans function2'
-        do i = 1, size(y2)
-            print *, y2(i)
-        end do
-        write(*, '(A)') new_line('A_2')
+    k = PHyman(output)
+    print *, 'we got one!', k
         
     deallocate(a_0%lower, a_0%diag, a_0%upper, a_1%lower, a_1%diag, a_1%upper, a_2%lower, a_2%diag, a_2%upper, &
     a_3%lower, a_3%diag, a_3%upper, mp%coef, y, eval%lower, eval%diag, eval%upper)

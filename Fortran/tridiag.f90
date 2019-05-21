@@ -298,7 +298,7 @@ contains
     !  @return x: the solution of Rx = y, where R and y come from the
     !              Hyman decomposition                                                           
     !*****************************************************************  
-    function PHyman(Rs) result(y)
+    function PHyman(Rs) result(res)
         implicit none
         !arguement variables
         type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
@@ -306,7 +306,7 @@ contains
         complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
         integer          :: n,i 
         !return variable
-        complex(kind=dp)   :: q, q1
+        complex(kind=dp)   :: q, q1, res
         
         
         n = size(Rs(1)%diag)
@@ -316,7 +316,10 @@ contains
         y(n-1) = Rs(1)%diag(n)
         y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
         !triBack writes x into y
-        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !solve Hyman's decomposition
+        bottom = Rs(1)%lower
+        middle = Rs(1)%diag(2:n-1)
+        top = Rs(1)%upper(2:n-2)
+        call triBack(bottom, middle, top, y) !solve Hyman's decomposition for x
         
         
         !get x' = y' - R'(R^-1y)
@@ -324,19 +327,23 @@ contains
         y1 = cmplx(0,0,kind = dp)
         y1(n-1) = Rs(2)%diag(n)
         y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
-            
-        q = -Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)
+                    
+        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2))
         print *, 'q is', q
         
         !need to invent tridiagonal matrix multiplicaiton for this
-        print *, 'printing the derivative'
         call print_trid(Rs(2))
         
         allocate(x1(3))
-        x1 = y1 - triMult(Rs(2),y)
+        x1 = y1 - triMult(Rs(2),y) !x'
+        q1 = -((Rs(2)%diag(1) * y(1) + Rs(2)%upper(1) * y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(2)%upper(1) * x1(2)))
         
-        !q1 = 
-        
+        !get r'/r using derivative of logarithm
+        res = cmplx(0,0,kind = dp)
+        do i = 1, n-1
+            res = res + bottom(i)/Rs(2)%lower(i)
+        end do
+        res = res + q1/q
         return
     end function PHyman
     
