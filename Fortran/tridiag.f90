@@ -305,6 +305,7 @@ contains
         !local variables
         complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
         integer          :: n,i 
+        type(trid)       :: r
         !return variable
         complex(kind=dp)   :: q, q1, res
         
@@ -321,21 +322,50 @@ contains
         top = Rs(1)%upper(2:n-2)
         call triBack(bottom, middle, top, y) !solve Hyman's decomposition for x
         
+        !at this point, y is x
+        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2))
+        
         
         !get x' = y' - R'(R^-1y)
-        allocate(y1(n-1))
+        allocate(y1(n-1)) 
         y1 = cmplx(0,0,kind = dp)
         y1(n-1) = Rs(2)%diag(n)
         y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
                     
-        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2))
-        print *, 'q is', q
+
+        allocate(r%diag(n-2), r%upper(n-2), r%lower(n-1)) 
         
-        !need to invent tridiagonal matrix multiplicaiton for this
-        call print_trid(Rs(2))
+        !!!!!
+        !!!!!
+        ! We actually don't want tridiagonal matrix multiplication here
+        ! We want upper tridiagonal matrix multiplication.
+        ! You need to redo triMult
+        !!!!!
+        !!!!!
+        r%diag = Rs(2)%lower
+        r%upper = Rs()
+        r%upper = Rs(2)%upper(2:n-2) !create R'
+        
+        print *, 'rinting r'
+        call print_trid(r)
         
         allocate(x1(3))
-        x1 = y1 - triMult(Rs(2),y) !x'
+        x1 = y1 - triMult(r,y) !Rx' = x1
+        
+        print *, 'printing x1', size(x1)
+        do i =1, size(x1)
+            print *, x1(i)
+        end do
+        call triBack(r%lower, r%diag, r%upper, x1) !write x' into x1
+        
+        print *, 'htprime1 is', Rs(2)%diag(1)
+        print *, 'htprime2 is', Rs(2)%upper(1)
+        print *, 'x1 is', y(1)
+        print *, 'x2 is', y(2)
+        
+        print *, 'x1 (prelim) is', x1
+        
+        
         q1 = -((Rs(2)%diag(1) * y(1) + Rs(2)%upper(1) * y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(2)%upper(1) * x1(2)))
         
         !get r'/r using derivative of logarithm
