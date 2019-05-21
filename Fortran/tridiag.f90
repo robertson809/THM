@@ -105,17 +105,49 @@ contains
         degree = size(a%coef)
         
         !printing
-        do i = 1, degree
+        do i = 1, degree 
             call print_trid(a%coef(i))
             !write (*,'(A, F8.3)') 'The answer is x = ', degree
-            write(*,'(A, I1)') 'x^', i
+            write(*,'(A, I1)') 'x^', i - 1
             if (i /= degree) then
                 write(*, '(A)') '+'
             end if
         end do
     end subroutine print_trid_mp
     
+    
+    !*****************************************************************
+    !                 Tridiagonal Matrix Multiplication                                  
+    !*****************************************************************
+    !    Multiplies a tridiagonal matrix A by a vector x
+    !                                                                
+    !  @param x - vector                                              
+    !  @param A - tridiagonal matrix of type(trid)
+    !  @return comp - Ax                                 
+    !*****************************************************************
+    function triMult(A, x) result(comp)
+        implicit none
+        !arguement variables
+        type(trid)          :: A
+        complex(kind = dp)  :: x(:)
+        !local variables
+        integer             :: i, n
+        !return variables
+        complex(kind = dp), allocatable :: comp(:)
+        
+        n = size(A%diag)
+        allocate(comp(n))
+        
+        !tridiagonal matrix multiplication
+        comp(1) = A%diag(1) * x(1) + A%upper(1) * x(2)
+        do i = 2, size(A%diag) - 1
+            comp(i) = A%lower(i-1) * x(i-1) + A%diag(i) * x(i) + A%upper(i) * x(i + 1)
+        end do
+        comp(n) = A%lower(n-1) * x(n-1) + A%diag(n) * x(n)
 
+        return
+    end function
+    
     
     !*****************************************************************
     !                       Reversal horner's method for             *
@@ -183,8 +215,7 @@ contains
         revTriHorner = [comp, compD1, compD2]
         return
     end function
-    
-    
+   
     !*****************************************************************
     !                       horner's method for                      *
     !                       matrix polynomials                       *
@@ -202,7 +233,7 @@ contains
     !                   as the running values of an outside program  *
     !                                                                *                             
     !*****************************************************************
-    function triHorner(x, mp) 
+    function triHorner(x, mp)
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
@@ -256,6 +287,60 @@ contains
     end function
     
     !*****************************************************************
+    !                       Proper Hyman's method                
+    !*****************************************************************
+    !    Assumes a proper tridiagonal matrix with no zero entries 
+    !      along the diagonals, excluding the top and bottom entries 
+    !      of the main and upper diagonal, which can be zero
+    !                        
+    !  @param R(u):  A tridiagonal matrix with entries on the main,  
+    !                upper and superupper diagonals                  
+    !  @return x: the solution of Rx = y, where R and y come from the
+    !              Hyman decomposition                                                           
+    !*****************************************************************  
+    function PHyman(Rs) result(y)
+        implicit none
+        !arguement variables
+        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        !local variables
+        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
+        integer          :: n,i 
+        !return variable
+        complex(kind=dp)   :: q, q1
+        
+        
+        n = size(Rs(1)%diag)
+        !get x = R^-1*y
+        allocate(y(n-1))
+        y = cmplx(0,0,kind = dp)
+        y(n-1) = Rs(1)%diag(n)
+        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+        !triBack writes x into y
+        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !solve Hyman's decomposition
+        
+        
+        !get x' = y' - R'(R^-1y)
+        allocate(y1(n-1))
+        y1 = cmplx(0,0,kind = dp)
+        y1(n-1) = Rs(2)%diag(n)
+        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
+            
+        q = -Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)
+        print *, 'q is', q
+        
+        !need to invent tridiagonal matrix multiplicaiton for this
+        print *, 'printing the derivative'
+        call print_trid(Rs(2))
+        
+        allocate(x1(3))
+        x1 = y1 - triMult(Rs(2),y)
+        
+        !q1 = 
+        
+        return
+    end function PHyman
+    
+    !*****************************************************************
     !                       Back substituion for                     *
     !               "upper" tridiagonal matrix polynomials           *
     !*****************************************************************
@@ -282,7 +367,7 @@ contains
         y(n-1) = (y(n-1) - middle(n-1) * y(n))/bottom(n-1) !second case
         do i = n-2,1,-1
             y(i) = (y(i) - top(i)*y(i+2) - middle(i)*y(i+1))/bottom(i)
-        end do     
-        
-    end subroutine triBack
+        end do 
+    end subroutine triBack   
+    
 end module tridiag
