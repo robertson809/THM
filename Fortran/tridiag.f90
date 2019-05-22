@@ -122,21 +122,21 @@ contains
     !    Multiplies a upper tridiagonal matrix A by a vector x
     !                                                                
     !  @param x - vector                                              
-    !  @param diag - the diagonal
-	!  @param upper - the 1 diagonal
-	!  @param super - the 2 diagonal
+    !  @param bottom - the diagonal
+	!  @param middle - the 1 diagonal
+	!  @param top - the 2 diagonal
     !  @return comp - Ax                                 
     !*****************************************************************
-    function triMult(diag, upper, super, x) result(comp)
+    function triMult(bottom, middle, top, x) result(comp)
         implicit none
         !arguement variables
-        complex(kind = dp)  :: x(:), diag(:), upper(:), super(:)
+        complex(kind = dp)  :: x(:), bottom(:), middle(:), top(:)
         !local variables
         integer             :: i, n
         !return variables
         complex(kind = dp), allocatable :: comp(:)
         
-        n = size(diag)
+        n = size(bottom)
         allocate(comp(n))
         
 !Testing
@@ -165,20 +165,20 @@ contains
 !             print *, super(i)
 !         end do
         
-        if(size(super) > 0) then
-            print *, 'doing regular multiplication'
+        if(size(top) > 0) then
             !upper triangular tridiagonal matrix multiplication
-            do i = 1, size(diag)
-                comp(i) = diag(i) * x(i) + upper(i) * x(i+1) + super(i) * x(i + 2)
+            do i = 1, n-2
+                comp(i) = bottom(i) * x(i) + middle(i) * x(i+1) + top(i) * x(i + 2)
             end do
-            comp(n) = diag(n) * x(n)
+            comp(n-1) = bottom(n-1) * x(n-1) + middle(n-1)*x(n)
+            comp(n) = bottom(n) * x(n)
         else
-            print *, 'doing 2x2 multiplication'
+            print *, 'WARNING: 3x3 special case'
             !upper triangular tridiagonal matrix multiplication with 2x2 matrix
-            do i = 1, size(diag) - 1
-                comp(i) = diag(i) * x(i) + upper(i) * x(i+1)
+            do i = 1, size(bottom) - 1
+                comp(i) = bottom(i) * x(i) + middle(i) * x(i+1)
             end do
-            comp(n) = diag(n) * x(n)
+            comp(n) = bottom(n) * x(n)
         end if
         return
     end function
@@ -350,15 +350,26 @@ contains
         y = cmplx(0,0,kind = dp)
         y(n-1) = Rs(1)%diag(n)
         y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+        
+!         print *, 'printing y'
+!         do i =1, size(y)
+!             print *, y(i)
+!         end do
+        
         !triBack writes x into y
         bottom = Rs(1)%lower
         middle = Rs(1)%diag(2:n-1)
         top = Rs(1)%upper(2:n-2)
         call triBack(bottom, middle, top, y) !solve Hyman's decomposition for x
         
+!         print *, 'printing x'
+!         do i =1, size(y)
+!             print *, y(i)
+!         end do
+        
         !at this point, y is x
         q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2))
-        
+!       print *, 'q is', q
         
         !get x' = y' - R'(R^-1y)
         allocate(y1(n-1)) 
@@ -370,12 +381,7 @@ contains
 !         do i =1, size(y1)
 !             print *, y1(i)
 !         end do
-!
-!         print *, 'printing x'
-!         do i =1, size(y)
-!             print *, y(i)
-!         end do
-!
+
 !         print *, 'printing R'
 !         print *, 'printing lower'
 !         do i = 1, size(Rs(2)%lower)
@@ -387,14 +393,19 @@ contains
 !         end do
 !         print *, 'size of upper is', size(Rs(2)%upper(2:n-2))
         
-        allocate(x1(size(y)))
-        x1 = triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y)
-!         print *, 'printing output of Rprimex'
+       !  allocate(x1(size(y)))
+!         x1 = triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y)
+!          print *, 'printing output of Rprimex'
+!          do i =1, size(x1)
+!              print *, x1(i)
+!          end do
+                    
+        x1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !Rx' = x1
+        
+!         print *, 'printing output of y - Rprimex'
 !         do i =1, size(x1)
 !             print *, x1(i)
 !         end do
-                    
-        x1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !Rx' = x1
         call triback(bottom, middle, top, x1)!solve Rx' = x1 for x' 
 		
 !         print *, 'printing x prime'
@@ -420,7 +431,7 @@ contains
         !y. is x, x1 is x'
         q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(1)%upper(1)*x1(2)))
         
-        !print *, ' q prime is', q1
+!        print *, ' q prime is', q1
         !get r'/r using derivative of logarithm
         res = cmplx(0,0,kind = dp)
         do i = 1, n-1

@@ -46,10 +46,10 @@ program tridiag_driver
     ! loop counter
     integer :: i
     ! tridiagonal matrix polynomial
-    type(trid) :: a_3, a_2, a_1, a_0, eval
+    type(trid) :: a_3, a_2, a_1, a_0, b_0, b_1, b_2, b_3, eval
     complex(kind=dp), allocatable :: y(:), y2(:), v(:)
     type(trid) :: output(3)
-    type(trid_mp)  ::mp, mp2
+    type(trid_mp)  ::mp, mp2, mp3
     complex(kind=dp)        :: k
     
     
@@ -167,7 +167,6 @@ program tridiag_driver
     
     ! Proper Hyman tester
     allocate(mp2%coef(3))
-    write(*, '(A)') 'line65'
     a_0%lower(1) = 3
     a_0%diag(1) = 1
     a_0%upper(1) = 2
@@ -236,19 +235,104 @@ program tridiag_driver
     call print_trid(output(2))
     write(*, '(A)') new_line('A_2')
     
-    !test matrix multiplication - rewrite
-!     allocate(v(3))
-!     v(1) = 1
-!     v(2) = 2
-!     v(3) = 3
-!
-!     v = triMult(output(1), v)
-!     write(*, '(A)') 'MP(3)(1,2,3) = '
-!         do i = 1, size(v)
-!             print *, v(i)
-!         end do
-!     write(*, '(A)') new_line('A_2')
-!
+    
+    ! Proper Hyman tester number 2
+    allocate(b_3%diag(4), b_3%upper(3), b_3%lower(3))
+    allocate(b_2%diag(4), b_2%upper(3), b_2%lower(3))
+    allocate(b_1%diag(4), b_1%upper(3), b_1%lower(3))
+    allocate(b_0%diag(4), b_0%upper(3), b_0%lower(3))
+    allocate(mp3%coef(4))
+    
+    b_0%lower(1) = 4
+    b_0%lower(2) = 15
+    b_0%lower(3) = 1
+    
+    b_0%diag(1) = 1
+    b_0%diag(2) = 7
+    b_0%diag(3) = 19
+    b_0%diag(4) = 6
+    
+    b_0%upper(1) = 6
+    b_0%upper(2) = 4
+    b_0%upper(3) = 23
+
+    b_1%lower(1) = 3
+    b_1%lower(2) = 14
+    b_1%lower(3) = 4
+    
+    b_1%diag(1) = 4
+    b_1%diag(2) = 6
+    b_1%diag(3) = 18
+    b_1%diag(4) = 2
+    
+    b_1%upper(1) = 2
+    b_1%upper(2) = 3
+    b_1%upper(3) = 22
+    
+    b_2%lower(1) = 2
+    b_2%lower(2) = 13
+    b_2%lower(3) = 1
+    
+    b_2%diag(1) = 1
+    b_2%diag(2) = 5
+    b_2%diag(3) = 17
+    b_2%diag(4) = 9
+    
+    b_2%upper(1) = 9
+    b_2%upper(2) = 2
+    b_2%upper(3) = 21
+    
+    b_3%lower(1) = 1
+    b_3%lower(2) = 12
+    b_3%lower(3) = 3
+    
+    b_3%diag(1) = 3
+    b_3%diag(2) = 5
+    b_3%diag(3) = 16
+    b_3%diag(4) = 5
+    
+    b_3%upper(1) = 5
+    b_3%upper(2) = 1
+    b_3%upper(3) = 20
+    
+    mp3%coef(1) = b_0
+    mp3%coef(2) = b_1
+    mp3%coef(3) = b_2
+    mp3%coef(4) = b_3
+    mp3%size = 4
+    mp3%degree = 3
+    
+    write(*, '(A)') 'Printing for HYMANS'
+    write(*, '(A)') 'Printing B_0'
+    call print_trid(b_0)
+    write(*, '(A)') new_line('B_0')
+    
+    write(*, '(A)') 'Printing B_1'
+    call print_trid(b_1)
+    write(*, '(A)') new_line('B_1')
+    
+    write(*, '(A)') 'Printing B_2'
+    call print_trid(b_2)
+    write(*, '(A)') new_line('B_2')
+    
+    write(*, '(A)') 'Printing B_3'
+    call print_trid(b_3)
+    write(*, '(A)') new_line('B_3')
+    
+    write(*, '(A)') 'Printing MP3 for proper Hymans'
+    call print_trid_mp(mp3)
+    write(*, '(A)') new_line('A')
+    
+    !evaluate MP
+    output = triHorner(cmplx(3,0, kind = dp), mp3)
+    
+    write(*, '(A)') 'MP3(3)'
+    call print_trid(output(1))
+    write(*, '(A)') new_line('A_2')
+    
+    write(*, '(A)') 'MP3''(3)'
+    call print_trid(output(2))
+    write(*, '(A)') new_line('A_2')
     
     !main Hyman tester, with output which is three trids, the value, and first two derivatives
     k = PHyman(output)
