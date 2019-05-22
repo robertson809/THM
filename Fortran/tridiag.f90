@@ -130,7 +130,6 @@ contains
     function triMult(diag, upper, super, x) result(comp)
         implicit none
         !arguement variables
-        type(trid)          :: A
         complex(kind = dp)  :: x(:), diag(:), upper(:), super(:)
         !local variables
         integer             :: i, n
@@ -140,11 +139,47 @@ contains
         n = size(diag)
         allocate(comp(n))
         
-        !upper triangular tridiagonal matrix multiplication
-        do i = 2, size(A%diag) - 1
-            comp(i) = diag(i) * x(i) + upper(i) * x(i+1) + super(i) * x(i + 2)
-        end do
-        comp(n) = diag(n) * x(n)
+!Testing
+!         print *, 'super has entries'
+!         print *, super(1)
+!         print *, 'but has size'
+!         print *, size(super)
+!
+!         print *, 'printing diag'
+!         do i = 1, size(diag)
+!             print *, diag(i)
+!         end do
+!
+!         print *, 'printing upper'
+!         do i = 1, size(upper)
+!             print *, upper(i)
+!         end do
+!
+!         print *, 'printing super'
+!         do i = 1, size(super)
+!             print *, super(i)
+!         end do
+!
+!         print *, 'printing mulitiplication terms'
+!         do i = 1, size(super)
+!             print *, super(i)
+!         end do
+        
+        if(size(super) > 0) then
+            print *, 'doing regular multiplication'
+            !upper triangular tridiagonal matrix multiplication
+            do i = 1, size(diag)
+                comp(i) = diag(i) * x(i) + upper(i) * x(i+1) + super(i) * x(i + 2)
+            end do
+            comp(n) = diag(n) * x(n)
+        else
+            print *, 'doing 2x2 multiplication'
+            !upper triangular tridiagonal matrix multiplication with 2x2 matrix
+            do i = 1, size(diag) - 1
+                comp(i) = diag(i) * x(i) + upper(i) * x(i+1)
+            end do
+            comp(n) = diag(n) * x(n)
+        end if
         return
     end function
     
@@ -305,7 +340,6 @@ contains
         !local variables
         complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
         integer          :: n,i 
-        type(trid)       :: r
         !return variable
         complex(kind=dp)   :: q, q1, res
         
@@ -331,43 +365,62 @@ contains
         y1 = cmplx(0,0,kind = dp)
         y1(n-1) = Rs(2)%diag(n)
         y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
+        
+!         print *, 'printing y prime'
+!         do i =1, size(y1)
+!             print *, y1(i)
+!         end do
+!
+!         print *, 'printing x'
+!         do i =1, size(y)
+!             print *, y(i)
+!         end do
+!
+!         print *, 'printing R'
+!         print *, 'printing lower'
+!         do i = 1, size(Rs(2)%lower)
+!             print *, Rs(2)%lower(i)
+!         end do
+!         print *, 'printing main'
+!         do i = 1, size(Rs(2)%diag(2:n-1))
+!             print *, Rs(2)%diag(i+1)
+!         end do
+!         print *, 'size of upper is', size(Rs(2)%upper(2:n-2))
+        
+        allocate(x1(size(y)))
+        x1 = triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y)
+!         print *, 'printing output of Rprimex'
+!         do i =1, size(x1)
+!             print *, x1(i)
+!         end do
                     
-
-        allocate(r%diag(n-2), r%upper(n-2), r%lower(n-1)) 
-        
-        !!!!!
-        !!!!!
-        ! We actually don't want tridiagonal matrix multiplication here
-        ! We want upper tridiagonal matrix multiplication.
-        ! You need to redo triMult
-        !!!!!
-        !!!!!
-        r%diag = Rs(2)%lower
-        r%upper = Rs()
-        r%upper = Rs(2)%upper(2:n-2) !create R'
-        
-        print *, 'rinting r'
-        call print_trid(r)
-        
-        allocate(x1(3))
         x1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !Rx' = x1
         call triback(bottom, middle, top, x1)!solve Rx' = x1 for x' 
 		
-        print *, 'printing x prime', size(x1)
-        do i =1, size(x1)
-            print *, x1(i)
-        end do
+!         print *, 'printing x prime'
+!         do i =1, size(x1)
+!             print *, x1(i)
+!         end do
         
-        print *, 'htprime1 is', Rs(2)%diag(1)
-        print *, 'htprime2 is', Rs(2)%upper(1)
-        print *, 'x1 is', y(1)
-        print *, 'x2 is', y(2)
-        
-        print *, 'x1 (prelim) is', x1
+!         print *, 'htprime1 is', Rs(2)%diag(1)
+!         print *, 'htprime2 is', Rs(2)%upper(1)
+!
+!         print *, 'x1 is', y(1)
+!         print *, 'x2 is', y(2)
+!
+!         print *, 'ht1 is', Rs(1)%diag(1)
+!         print *, 'ht2 is', Rs(1)%upper(1)
+!
+!         print *, 'xprime1 is', x1(1)
+!         print *, 'xprime2 is', x1(2)
+!
+!         print *, 'the first term in the dot product is', Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)
+!         print *, 'the second term in the dot product is', Rs(1)%diag(1)*x1(1) + Rs(1)%upper(1)*x1(2)
         
         !y. is x, x1 is x'
-        q1 = -((Rs(2)%diag(1) * y(1) + Rs(2)%upper(1) * y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(2)%upper(1) * x1(2)))
+        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(1)%upper(1)*x1(2)))
         
+        !print *, ' q prime is', q1
         !get r'/r using derivative of logarithm
         res = cmplx(0,0,kind = dp)
         do i = 1, n-1
