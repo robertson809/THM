@@ -315,7 +315,6 @@ contains
             comp(n-1) = bottom(n-1) * x(n-1) + middle(n-1)*x(n)
             comp(n) = bottom(n) * x(n)
         end if
-        
         return
     end function
     
@@ -324,13 +323,14 @@ contains
     !                       Proper Hyman's method                
     !*****************************************************************
     !    Assumes a proper tridiagonal matrix with no zero entries 
-    !      along the diagonals, excluding the top and bottom entries 
-    !      of the main and upper diagonal, which can be zero
+    !      along the main diagonal
     !                        
-    !  @param R(u):  A tridiagonal matrix with entries on the main,  
-    !                upper and superupper diagonals                  
-    !  @return x: the solution of Rx = y, where R and y come from the
-    !              Hyman decomposition                                                           
+    !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
+    !                 at u in the first entry, value of the second 
+    !                 derivative in the second entry, and value of
+    !                 the third derivative in the third
+    !  @return res: Newtown correction term, the derivative of the 
+    !               of the determinant over the determinant
     !*****************************************************************  
     function PHyman(Rs) result(res)
         implicit none
@@ -371,5 +371,65 @@ contains
         return
     end function PHyman 
     
+    !*****************************************************************
+    !                       Special Hyman's method                
+    !*****************************************************************
+    !    Handles the special two and three dimensional cases of a 
+    !    tridiagonal matrix polynomial
+    !                        
+    !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
+    !                 at u in the first entry, value of the second 
+    !                 derivative in the second entry, and value of
+    !                 the third derivative in the third
+    !  @return res: Newtown correction term, the derivative of the 
+    !               of the determinant over the determinant
+    !***************************************************************** 
+    function SHyman(Rs) result(res)
+        implicit none
+        !arguement variables
+        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        !local variables
+        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
+        integer          :: n,i 
+        !return variable
+        complex(kind=dp)   :: q, q1, res
+        
+        n = size(Rs(1)%diag)
+        !get x = R^-1*y
+        allocate(y(n-1))
+        y = cmplx(0,0,kind = dp)
+        y(n-1) = Rs(1)%diag(n)
+        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+        
+        allocate(y1(n-1)) 
+        y1 = cmplx(0,0,kind = dp)
+        y1(n-1) = Rs(2)%diag(n)
+        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
+
+        !****************************************************************************
+        !Do back substitution by hand
+        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
+        !****************************************************************************
+        
+        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
+        !************************************************************************************
+        !Do triMult by hand
+        y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
+        !************************************************************************************
+        !************************************************************************************
+        !Do triback by hand
+        call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
+        !************************************************************************************
+        
+        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
+        
+        !get r'/r using derivative of logarithm
+        res = cmplx(0,0,kind = dp)
+        do i = 1, n-1
+            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
+        end do
+        res = res + q1/q
+        return
+    end function SHyman 
        
 end module tridiag
