@@ -119,32 +119,32 @@ contains
     !*****************************************************************
     !                 Tridiagonal Matrix Multiplication                                  
     !*****************************************************************
-    !    Multiplies a tridiagonal matrix A by a vector x
+    !    Multiplies a upper tridiagonal matrix A by a vector x
     !                                                                
     !  @param x - vector                                              
-    !  @param A - tridiagonal matrix of type(trid)
+    !  @param diag - the diagonal
+	!  @param upper - the 1 diagonal
+	!  @param super - the 2 diagonal
     !  @return comp - Ax                                 
     !*****************************************************************
-    function triMult(A, x) result(comp)
+    function triMult(diag, upper, super, x) result(comp)
         implicit none
         !arguement variables
         type(trid)          :: A
-        complex(kind = dp)  :: x(:)
+        complex(kind = dp)  :: x(:), diag(:), upper(:), super(:)
         !local variables
         integer             :: i, n
         !return variables
         complex(kind = dp), allocatable :: comp(:)
         
-        n = size(A%diag)
+        n = size(diag)
         allocate(comp(n))
         
-        !tridiagonal matrix multiplication
-        comp(1) = A%diag(1) * x(1) + A%upper(1) * x(2)
+        !upper triangular tridiagonal matrix multiplication
         do i = 2, size(A%diag) - 1
-            comp(i) = A%lower(i-1) * x(i-1) + A%diag(i) * x(i) + A%upper(i) * x(i + 1)
+            comp(i) = diag(i) * x(i) + upper(i) * x(i+1) + super(i) * x(i + 2)
         end do
-        comp(n) = A%lower(n-1) * x(n-1) + A%diag(n) * x(n)
-
+        comp(n) = diag(n) * x(n)
         return
     end function
     
@@ -350,13 +350,13 @@ contains
         call print_trid(r)
         
         allocate(x1(3))
-        x1 = y1 - triMult(r,y) !Rx' = x1
-        
-        print *, 'printing x1', size(x1)
+        x1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !Rx' = x1
+        call triback(bottom, middle, top, x1)!solve Rx' = x1 for x' 
+		
+        print *, 'printing x prime', size(x1)
         do i =1, size(x1)
             print *, x1(i)
         end do
-        call triBack(r%lower, r%diag, r%upper, x1) !write x' into x1
         
         print *, 'htprime1 is', Rs(2)%diag(1)
         print *, 'htprime2 is', Rs(2)%upper(1)
@@ -365,13 +365,13 @@ contains
         
         print *, 'x1 (prelim) is', x1
         
-        
+        !y. is x, x1 is x'
         q1 = -((Rs(2)%diag(1) * y(1) + Rs(2)%upper(1) * y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(2)%upper(1) * x1(2)))
         
         !get r'/r using derivative of logarithm
         res = cmplx(0,0,kind = dp)
         do i = 1, n-1
-            res = res + bottom(i)/Rs(2)%lower(i)
+            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
         end do
         res = res + q1/q
         return
