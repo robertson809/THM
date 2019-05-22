@@ -44,7 +44,6 @@
 module tridiag
     implicit none
     integer, parameter  :: dp = kind(1.d0)
-	
     !****************************************************************
     !				           Type trid                            *
     !                      Tridiagonal Matrix                       *
@@ -53,6 +52,7 @@ module tridiag
     type trid
         complex(kind=dp), allocatable :: diag(:), upper(:), lower(:)
     end type trid
+    
     
     !**************************************************************
     !				           Type trid_mp		                  *
@@ -67,6 +67,7 @@ module tridiag
         integer                 :: degree
     end type trid_mp
     
+    
 contains
     !**************************************************************
     !				Subroutine print_trid                         
@@ -80,8 +81,7 @@ contains
         integer         :: i
         integer         :: n
         
-        n = size(a%diag)
-			
+        n = size(a%diag)	
         ! print statements
         write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%diag(1), a%upper(1)
         do i=2, n - 1
@@ -89,6 +89,7 @@ contains
         end do
         write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%lower(n-1), a%diag(n)
     end subroutine print_trid
+    
     
     !**************************************************************
     !				Subroutine print_trid_mp                       
@@ -114,74 +115,6 @@ contains
             end if
         end do
     end subroutine print_trid_mp
-    
-    
-    !*****************************************************************
-    !                 Tridiagonal Matrix Multiplication                                  
-    !*****************************************************************
-    !    Multiplies a upper tridiagonal matrix A by a vector x
-    !                                                                
-    !  @param x - vector                                              
-    !  @param bottom - the diagonal
-	!  @param middle - the 1 diagonal
-	!  @param top - the 2 diagonal
-    !  @return comp - Ax                                 
-    !*****************************************************************
-    function triMult(bottom, middle, top, x) result(comp)
-        implicit none
-        !arguement variables
-        complex(kind = dp)  :: x(:), bottom(:), middle(:), top(:)
-        !local variables
-        integer             :: i, n
-        !return variables
-        complex(kind = dp), allocatable :: comp(:)
-        
-        n = size(bottom)
-        allocate(comp(n))
-        
-!Testing
-!         print *, 'super has entries'
-!         print *, super(1)
-!         print *, 'but has size'
-!         print *, size(super)
-!
-!         print *, 'printing diag'
-!         do i = 1, size(diag)
-!             print *, diag(i)
-!         end do
-!
-!         print *, 'printing upper'
-!         do i = 1, size(upper)
-!             print *, upper(i)
-!         end do
-!
-!         print *, 'printing super'
-!         do i = 1, size(super)
-!             print *, super(i)
-!         end do
-!
-!         print *, 'printing mulitiplication terms'
-!         do i = 1, size(super)
-!             print *, super(i)
-!         end do
-        
-        if(size(top) > 0) then
-            !upper triangular tridiagonal matrix multiplication
-            do i = 1, n-2
-                comp(i) = bottom(i) * x(i) + middle(i) * x(i+1) + top(i) * x(i + 2)
-            end do
-            comp(n-1) = bottom(n-1) * x(n-1) + middle(n-1)*x(n)
-            comp(n) = bottom(n) * x(n)
-        else
-            print *, 'WARNING: 3x3 special case'
-            !upper triangular tridiagonal matrix multiplication with 2x2 matrix
-            do i = 1, size(bottom) - 1
-                comp(i) = bottom(i) * x(i) + middle(i) * x(i+1)
-            end do
-            comp(n) = bottom(n) * x(n)
-        end if
-        return
-    end function
     
     
     !*****************************************************************
@@ -251,6 +184,7 @@ contains
         return
     end function
    
+   
     !*****************************************************************
     !                       horner's method for                      *
     !                       matrix polynomials                       *
@@ -280,15 +214,13 @@ contains
         type(trid)          :: compD2
         type(trid)          :: compD1
         type(trid)          :: triHorner(3)
-            
-            
+             
         !first derivative, three trid data types, all zero, of the right length (size)
         allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
         compD1%lower = cmplx(0,0,kind = dp) !sets everything in the array to zero
         compD1%diag = cmplx(0,0,kind = dp) 
         compD1%upper = cmplx(0,0,kind = dp) 
         
-
         !second derivative
         allocate(compD2%upper(mp%size -1), compD2%diag(mp%size), compD2%lower(mp%size -1))
         compD2%lower = cmplx(0,0,kind = dp)
@@ -321,125 +253,6 @@ contains
         return
     end function
     
-    !*****************************************************************
-    !                       Proper Hyman's method                
-    !*****************************************************************
-    !    Assumes a proper tridiagonal matrix with no zero entries 
-    !      along the diagonals, excluding the top and bottom entries 
-    !      of the main and upper diagonal, which can be zero
-    !                        
-    !  @param R(u):  A tridiagonal matrix with entries on the main,  
-    !                upper and superupper diagonals                  
-    !  @return x: the solution of Rx = y, where R and y come from the
-    !              Hyman decomposition                                                           
-    !*****************************************************************  
-    function PHyman(Rs) result(res)
-        implicit none
-        !arguement variables
-        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
-        !local variables
-        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
-        integer          :: n,i 
-        !return variable
-        complex(kind=dp)   :: q, q1, res
-        
-        
-        n = size(Rs(1)%diag)
-        !get x = R^-1*y
-        allocate(y(n-1))
-        y = cmplx(0,0,kind = dp)
-        y(n-1) = Rs(1)%diag(n)
-        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
-        
-!         print *, 'printing y'
-!         do i =1, size(y)
-!             print *, y(i)
-!         end do
-        
-        !triBack writes x into y
-        bottom = Rs(1)%lower
-        middle = Rs(1)%diag(2:n-1)
-        top = Rs(1)%upper(2:n-2)
-        call triBack(bottom, middle, top, y) !solve Hyman's decomposition for x
-        
-!         print *, 'printing x'
-!         do i =1, size(y)
-!             print *, y(i)
-!         end do
-        
-        !at this point, y is x
-        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2))
-!       print *, 'q is', q
-        
-        !get x' = y' - R'(R^-1y)
-        allocate(y1(n-1)) 
-        y1 = cmplx(0,0,kind = dp)
-        y1(n-1) = Rs(2)%diag(n)
-        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
-        
-!         print *, 'printing y prime'
-!         do i =1, size(y1)
-!             print *, y1(i)
-!         end do
-
-!         print *, 'printing R'
-!         print *, 'printing lower'
-!         do i = 1, size(Rs(2)%lower)
-!             print *, Rs(2)%lower(i)
-!         end do
-!         print *, 'printing main'
-!         do i = 1, size(Rs(2)%diag(2:n-1))
-!             print *, Rs(2)%diag(i+1)
-!         end do
-!         print *, 'size of upper is', size(Rs(2)%upper(2:n-2))
-        
-       !  allocate(x1(size(y)))
-!         x1 = triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y)
-!          print *, 'printing output of Rprimex'
-!          do i =1, size(x1)
-!              print *, x1(i)
-!          end do
-                    
-        x1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !Rx' = x1
-        
-!         print *, 'printing output of y - Rprimex'
-!         do i =1, size(x1)
-!             print *, x1(i)
-!         end do
-        call triback(bottom, middle, top, x1)!solve Rx' = x1 for x' 
-		
-!         print *, 'printing x prime'
-!         do i =1, size(x1)
-!             print *, x1(i)
-!         end do
-        
-!         print *, 'htprime1 is', Rs(2)%diag(1)
-!         print *, 'htprime2 is', Rs(2)%upper(1)
-!
-!         print *, 'x1 is', y(1)
-!         print *, 'x2 is', y(2)
-!
-!         print *, 'ht1 is', Rs(1)%diag(1)
-!         print *, 'ht2 is', Rs(1)%upper(1)
-!
-!         print *, 'xprime1 is', x1(1)
-!         print *, 'xprime2 is', x1(2)
-!
-!         print *, 'the first term in the dot product is', Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)
-!         print *, 'the second term in the dot product is', Rs(1)%diag(1)*x1(1) + Rs(1)%upper(1)*x1(2)
-        
-        !y. is x, x1 is x'
-        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*x1(1) + Rs(1)%upper(1)*x1(2)))
-        
-!        print *, ' q prime is', q1
-        !get r'/r using derivative of logarithm
-        res = cmplx(0,0,kind = dp)
-        do i = 1, n-1
-            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
-        end do
-        res = res + q1/q
-        return
-    end function PHyman
     
     !*****************************************************************
     !                       Back substituion for                     *
@@ -469,6 +282,94 @@ contains
         do i = n-2,1,-1
             y(i) = (y(i) - top(i)*y(i+2) - middle(i)*y(i+1))/bottom(i)
         end do 
-    end subroutine triBack   
+    end subroutine triBack  
     
+    
+    !*****************************************************************
+    !                 Tridiagonal Matrix Multiplication                                  
+    !*****************************************************************
+    !    Multiplies a upper tridiagonal matrix A by a vector x
+    !                                                                
+    !  @param x - vector                                              
+    !  @param bottom - the diagonal
+	!  @param middle - the 1 diagonal
+	!  @param top - the 2 diagonal
+    !  @return comp - Ax                                 
+    !*****************************************************************
+    function triMult(bottom, middle, top, x) result(comp)
+        implicit none
+        !arguement variables
+        complex(kind = dp)  :: x(:), bottom(:), middle(:), top(:)
+        !local variables
+        integer             :: i, n
+        !return variables
+        complex(kind = dp), allocatable :: comp(:)
+        
+        n = size(bottom)
+        allocate(comp(n))
+        if(size(top) > 0) then
+            !upper triangular tridiagonal matrix multiplication
+            do i = 1, n-2
+                comp(i) = bottom(i) * x(i) + middle(i) * x(i+1) + top(i) * x(i + 2)
+            end do
+            comp(n-1) = bottom(n-1) * x(n-1) + middle(n-1)*x(n)
+            comp(n) = bottom(n) * x(n)
+        end if
+        
+        return
+    end function
+    
+    
+    !*****************************************************************
+    !                       Proper Hyman's method                
+    !*****************************************************************
+    !    Assumes a proper tridiagonal matrix with no zero entries 
+    !      along the diagonals, excluding the top and bottom entries 
+    !      of the main and upper diagonal, which can be zero
+    !                        
+    !  @param R(u):  A tridiagonal matrix with entries on the main,  
+    !                upper and superupper diagonals                  
+    !  @return x: the solution of Rx = y, where R and y come from the
+    !              Hyman decomposition                                                           
+    !*****************************************************************  
+    function PHyman(Rs) result(res)
+        implicit none
+        !arguement variables
+        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        !local variables
+        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
+        integer          :: n,i 
+        !return variable
+        complex(kind=dp)   :: q, q1, res
+        
+        n = size(Rs(1)%diag)
+        !get x = R^-1*y
+        allocate(y(n-1))
+        y = cmplx(0,0,kind = dp)
+        y(n-1) = Rs(1)%diag(n)
+        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+        
+        allocate(y1(n-1)) 
+        y1 = cmplx(0,0,kind = dp)
+        y1(n-1) = Rs(2)%diag(n)
+        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
+
+        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
+        
+        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
+                    
+        y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
+        call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
+        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
+        
+        !get r'/r using derivative of logarithm
+        res = cmplx(0,0,kind = dp)
+        do i = 1, n-1
+            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
+        end do
+        res = res + q1/q
+        return
+    end function PHyman 
+    
+       
 end module tridiag
