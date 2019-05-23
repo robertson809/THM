@@ -46,7 +46,7 @@ program tridiag_driver
     ! loop counter
     integer :: i
     ! tridiagonal matrix polynomial
-    type(trid) :: a_3, a_2, a_1, a_0, b_0, b_1, b_2, b_3, eval
+    type(trid) :: a_3, a_2, a_1, a_0, b_0, b_1, b_2, b_3, c, c1, d, d1, eval
     complex(kind=dp), allocatable :: y(:), y2(:), v(:)
     type(trid) :: output(3)
     type(trid_mp)  ::mp, mp2, mp3
@@ -235,7 +235,6 @@ program tridiag_driver
     call print_trid(output(2))
     write(*, '(A)') new_line('A_2')
     
-    
     ! Proper Hyman tester number 2
     allocate(b_3%diag(4), b_3%upper(3), b_3%lower(3))
     allocate(b_2%diag(4), b_2%upper(3), b_2%lower(3))
@@ -323,22 +322,105 @@ program tridiag_driver
     call print_trid_mp(mp3)
     write(*, '(A)') new_line('A')
     
-    !evaluate MP
-    output = triHorner(cmplx(3,0, kind = dp), mp3)
+    ! Proper Hyman tester number 3
+    allocate(c%diag(3), c%upper(2), c%lower(2))
+    allocate(c1%diag(3), c1%upper(2), c1%lower(2))
     
-    write(*, '(A)') 'MP3(3)'
-    call print_trid(output(1))
-    write(*, '(A)') new_line('A_2')
+    c%lower(1) = 58
+    c%lower(2) = 441
+    c%diag(1) = 103
+    c%diag(2) = 205
+    c%diag(3) = 658
+    c%upper(1) = 228
+    c%upper(2) = 58
     
-    write(*, '(A)') 'MP3''(3)'
-    call print_trid(output(2))
-    write(*, '(A)') new_line('A_2')
+    c1%lower(1) = 42
+    c1%lower(2) = 402
+    c1%diag(1) = 91
+    c1%diag(2) = 171
+    c1%diag(3) = 552
+    c1%upper(1) = 191
+    c1%upper(2) = 42
+    
+    write(*, '(A)') 'Printing for HYMANS three dimensional test case'
+    write(*, '(A)') 'Printing C'
+    call print_trid(c)
+    write(*, '(A)') new_line('B_0')
+    
+    write(*, '(A)') 'Printing c prime '
+    call print_trid(c1)
+    write(*, '(A)') new_line('B_1')
+    
+    ! Spedial 2x2 case
+    allocate(d%diag(2), d%upper(1), d%lower(1))
+    allocate(d1%diag(2), d1%upper(1), d1%lower(1))
+    
+    d%lower(1) = 58
+    d%diag(1) = 103
+    d%diag(2) = 205
+    d%upper(1) = 228
+    
+    d1%lower(1) = 42
+    d1%diag(1) = 91
+    d1%diag(2) = 171
+    d1%upper(1) = 191
+
+    
+   !evaluate MP
+!     output = triHorner(cmplx(3,0, kind = dp), mp3)
+    
+!     write(*, '(A)') 'MP3(3)'
+!     call print_trid(output(1))
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') 'MP3''(3)'
+!     call print_trid(output(2))
+!     write(*, '(A)') new_line('A_2')
     
     !main Hyman tester, with output which is three trids, the value, and first two derivatives
-    k = PHyman(output)
+!     k = PHyman(output)
+!     write(*, '(A)') new_line('A_2')
+!     print *, 'Step from proper Hyman is', k
+!     write(*, '(A)') new_line('A_2')
+
+    
+    
+    !Three dimensional test case
+    write(*, '(A)') 'Printing for HYMANS three dimensional test case'
+    write(*, '(A)') 'Printing C'
+    call print_trid(c)
+    write(*, '(A)') new_line('B_0')
+    
+    write(*, '(A)') 'Printing c prime '
+    call print_trid(c1)
+    write(*, '(A)') new_line('B_1')
+    
+    output(1) = c
+    output(2) = c1
+    k = SHyman3(output)
+    
     write(*, '(A)') new_line('A_2')
-    print *, 'Step from proper Hyman is', k
+    print *, 'Step from Hyman 3 is', k
     write(*, '(A)') new_line('A_2')
+    
+    !Two dimensional test case
+    write(*, '(A)') 'Printing for HYMANS two dimensional test case'
+    write(*, '(A)') 'Printing D'
+    call print_trid(d)
+    write(*, '(A)') new_line('B_0')
+    
+    write(*, '(A)') 'Printing D prime '
+    call print_trid(d1)
+    write(*, '(A)') new_line('B_1')
+    
+    output(1) = d
+    output(2) = d1
+    
+    k = SHyman2(output)
+    write(*, '(A)') new_line('A_2')
+    print *, 'Step from Hyman 2 is', k
+    write(*, '(A)') new_line('A_2')
+    
         
     deallocate(a_0%lower, a_0%diag, a_0%upper, a_1%lower, a_1%diag, a_1%upper, a_2%lower, a_2%diag, a_2%upper, &
     a_3%lower, a_3%diag, a_3%upper, mp%coef, y, eval%lower, eval%diag, eval%upper)

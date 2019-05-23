@@ -389,21 +389,15 @@ contains
         !arguement variables
         type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
         !return variable
-        complex(kind=dp)   :: res,a,b,c,d,e,f,g,a1,b1,c1,d1,e1,f1,g1
-        
-        a = Rs(1)%diag(1)
-        b = Rs(1)%upper(1)
-        
-        res = Rs(1)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3)-Rs(1)%lower(2)*Rs(1)%upper(2)) - &
-        Rs(1)%upper(1)*Rs(1)%lower(1)*Rs(1)%diag(3)
-        
-        res = Rs(2)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3) - Rs(1)%lower(2)*Rs(1)%upper(2)) + & 
-        Rs(1)%diag(1)*(Rs(2)%diag(2)*Rs(1)%diag(3) + &
-        Rs(1)%diag(2)*Rs(2)%diag(3) - Rs(2)%lower(2) - Rs(1)%upper(2) - Rs(1)%lower(2)*Rs(2)%upper(2)) - &
-        Rs(2)%upper(1)*Rs(1)%lower(1) *Rs(1)%diag(3) - Rs(1)%upper(1)*(Rs(2)%lower(1)*Rs(1)%diag(3) + &
-        Rs(1)%lower(1)*Rs(2)%diag(3))/res
-        
-        
+        complex(kind=dp)   :: res
+                             
+        res = (Rs(2)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3) - Rs(1)%lower(2)*Rs(1)%upper(2)) &
+        + Rs(1)%diag(1)*(Rs(2)%diag(2)*Rs(1)%diag(3) + Rs(1)%diag(2)*Rs(2)%diag(3) - Rs(2)%lower(2)*Rs(1)%upper(2) &
+        -Rs(1)%lower(2)*Rs(2)%upper(2)) - Rs(2)%upper(1)*(Rs(1)%lower(1)*Rs(1)%diag(3)) &
+        - Rs(1)%upper(1)*(Rs(2)%lower(1)*Rs(1)%diag(3) + Rs(1)%lower(1)*Rs(2)%diag(3)))/ &
+        (Rs(1)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3)-Rs(1)%lower(2)*Rs(1)%upper(2)) - &
+        Rs(1)%upper(1)*Rs(1)%lower(1)*Rs(1)%diag(3)) ! good luck reading this
+         
     end function SHyman3 
     
     !*****************************************************************
@@ -424,12 +418,20 @@ contains
         !arguement variables
         type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
         !return variable
-        complex(kind=dp)   :: res
+        complex(kind=dp)   :: det, detp, res
+        
+        res = 0
         
         !det'/det = (a'd + d'a - b'c -bc')/(ad -bc)
+        detp = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
+        Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) 
+        
+        det = (Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)*Rs(1)%lower(1)) 
+        
         res = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
-        Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(2)%lower(1)*Rs(1)%upper(1)) &
-        /(Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)-Rs(1)%lower(1)) 
+        Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) / &
+        ((Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)*Rs(1)%lower(1)))
+        print *, 'det, det prime', det, detp, detp/det, res - detp/det
         
         return
     end function SHyman2
