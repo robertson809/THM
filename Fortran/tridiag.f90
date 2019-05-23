@@ -418,21 +418,12 @@ contains
         !arguement variables
         type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
         !return variable
-        complex(kind=dp)   :: det, detp, res
-        
-        res = 0
-        
-        !det'/det = (a'd + d'a - b'c -bc')/(ad -bc)
-        detp = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
-        Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) 
-        
-        det = (Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)*Rs(1)%lower(1)) 
-        
+        complex(kind=dp)   :: res
+                
         res = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
         Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) / &
         ((Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)*Rs(1)%lower(1)))
-        print *, 'det, det prime', det, detp, detp/det, res - detp/det
-        
+
         return
     end function SHyman2
        
