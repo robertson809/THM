@@ -332,40 +332,40 @@ contains
     !  @return res: Newtown correction term, the derivative of the 
     !               of the determinant over the determinant
     !*****************************************************************  
-    function PHyman(Rs) result(res)
+    function PHyman(lower, diag, upper, lower1, diag1, upper1) result(res)
         implicit none
         !arguement variables
-        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        complex(kind = dp)  :: lower(:), diag(:), upper(:), lower1(:), diag1(:), upper1(:)
         !local variables
-        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
+        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:)
         integer          :: n,i 
         !return variable
         complex(kind=dp)   :: q, q1, res
         
-        n = size(Rs(1)%diag)
+        n = size(diag)
         !get x = R^-1*y
         allocate(y(n-1))
         y = cmplx(0,0,kind = dp)
-        y(n-1) = Rs(1)%diag(n)
-        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+        y(n-1) = diag(n)
+        y(n-2) = upper(n-1) !create y Hyman's decomposition
         
         allocate(y1(n-1)) 
         y1 = cmplx(0,0,kind = dp)
-        y1(n-1) = Rs(2)%diag(n)
-        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
+        y1(n-1) = diag1(n)
+        y1(n-2) = upper1(n-1) !create y' Hyman's decomposition
 
-        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
+        call triBack(lower, diag(2:n-1), upper(2:n-2), y) !put x into y
         
-        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
+        q = -(diag(1) * y(1) + upper(1) * y(2)) !at this point, y is x
                     
-        y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
-        call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
-        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
+        y1 = y1 - triMult(lower1, diag1(2:n-1), upper1(2:n-2), y) !y1 = y'-R'x
+        call triback(lower, diag(2:n-1), upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
+        q1 = -((diag1(1)*y(1) + upper1(1)*y(2)) + (diag(1)*y1(1) + upper(1)*y1(2)))
         
         !get r'/r using derivative of logarithm
         res = cmplx(0,0,kind = dp)
         do i = 1, n-1
-            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
+            res = res + lower1(i)/lower(i)
         end do
         res = res + q1/q
         return
@@ -384,16 +384,15 @@ contains
     !  @return res: Newtown correction term, the derivative of the 
     !               of the determinant over the determinant
     !***************************************************************** 
-    function SHyman3(Rs, lower, diag, upper, lower1, diag1, upper1) result(res)
+    function SHyman3(lower, diag, upper, lower1, diag1, upper1) result(res)
         implicit none
         !arguement variables
-        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
         complex(kind = dp)  :: lower(:), diag(:), upper(:), lower1(:), diag1(:), upper1(:)
         !return variable
         complex(kind=dp)   :: res
                              
         res = (diag1(1)*(diag(2)*diag(3) - lower(2)*upper(2)) &
-        + diag(1)*(Rs(2)%diag(2)*diag(3) + diag(2)*diag1(3) - lower1(2)*upper(2) &
+        + diag(1)*(diag1(2)*diag(3) + diag(2)*diag1(3) - lower1(2)*upper(2) &
         -lower(2)*upper1(2)) - upper1(1)*(lower(1)*diag(3)) &
         - upper(1)*(lower1(1)*diag(3) + lower(1)*diag1(3)))/ &
         (diag(1)*(diag(2)*diag(3)-lower(2)*upper(2)) - &
@@ -416,8 +415,6 @@ contains
     !***************************************************************** 
     function SHyman2(lower, diag, upper, lower1, diag1, upper1) result(res)
         implicit none
-        !arguement variables
-        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
         complex(kind = dp)  :: lower(:), diag(:), upper(:), lower1(:), diag1(:), upper1(:)
         !return variable
         complex(kind=dp)   :: res

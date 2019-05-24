@@ -366,22 +366,26 @@ program tridiag_driver
     d1%upper(1) = 191
 
     
-   !evaluate MP
-!     output = triHorner(cmplx(3,0, kind = dp), mp3)
-    
-!     write(*, '(A)') 'MP3(3)'
-!     call print_trid(output(1))
-!     write(*, '(A)') new_line('A_2')
-!
-!     write(*, '(A)') 'MP3''(3)'
-!     call print_trid(output(2))
-!     write(*, '(A)') new_line('A_2')
-    
+    !evaluate MP
+    output = triHorner(cmplx(3,0, kind = dp), mp3)
+
+    write(*, '(A)') 'MP3(3)'
+    call print_trid(output(1))
+    write(*, '(A)') new_line('A_2')
+
+    write(*, '(A)') 'MP3''(3)'
+    call print_trid(output(2))
+    write(*, '(A)') new_line('A_2')
+
     !main Hyman tester, with output which is three trids, the value, and first two derivatives
-!     k = PHyman(output)
-!     write(*, '(A)') new_line('A_2')
-!     print *, 'Step from proper Hyman is', k
-!     write(*, '(A)') new_line('A_2')
+    k = PHyman(output(1)%lower, output(1)%diag, output(1)%upper, & 
+    output(2)%lower, output(2)%diag, output(2)%upper)
+    write(*, '(A)') new_line('A_2')
+    print *, 'Step from proper Hyman is', k
+    if (abs(k) - 2.260370269576752 < 0.0000009) then
+        print *, 'Error', abs(k) - 2.260370269576752, 'is CORRECT'
+    end if
+    write(*, '(A)') new_line('A_2')
 
     
     
@@ -390,16 +394,16 @@ program tridiag_driver
     write(*, '(A)') 'Printing C'
     call print_trid(c)
     write(*, '(A)') new_line('B_0')
-    
+
     write(*, '(A)') 'Printing c prime '
     call print_trid(c1)
     write(*, '(A)') new_line('B_1')
-    
+
     output(1) = c
     output(2) = c1
-    k = SHyman3(output, output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
+    k = SHyman3(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
     output(2)%diag, output(2)%upper)
-    
+
     write(*, '(A)') new_line('A_2')
     print *, 'Step from Hyman 3 is', k
     print *, 'Error', abs(k) - 3.1249929625482458
@@ -407,23 +411,23 @@ program tridiag_driver
         print *, 'Error', abs(k) - 3.1249929625482458, 'is CORRECT'
     end if
     write(*, '(A)') new_line('A_2')
-    
+
     !Two dimensional test case
- !    write(*, '(A)') 'Printing for HYMANS two dimensional test case'
-!     write(*, '(A)') 'Printing D'
-!     call print_trid(d)
-!     write(*, '(A)') new_line('B_0')
-!
-!     write(*, '(A)') 'Printing D prime '
-!     call print_trid(d1)
-!     write(*, '(A)') new_line('B_1')
-    
+    write(*, '(A)') 'Printing for HYMANS two dimensional test case'
+    write(*, '(A)') 'Printing D'
+    call print_trid(d)
+    write(*, '(A)') new_line('B_0')
+
+    write(*, '(A)') 'Printing D prime '
+    call print_trid(d1)
+    write(*, '(A)') new_line('B_1')
+
     output(1) = d
     output(2) = d1
-    
+
     k = SHyman2(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
     output(2)%diag, output(2)%upper)
-    
+
     write(*, '(A)') new_line('A_2')
     print *, 'Step from Hyman 2 is', k
     print *, 'Error:', k - 1.9787099226967431
