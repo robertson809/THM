@@ -384,19 +384,20 @@ contains
     !  @return res: Newtown correction term, the derivative of the 
     !               of the determinant over the determinant
     !***************************************************************** 
-    function SHyman3(Rs) result(res)
+    function SHyman3(Rs, lower, diag, upper, lower1, diag1, upper1) result(res)
         implicit none
         !arguement variables
         type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        complex(kind = dp)  :: lower(:), diag(:), upper(:), lower1(:), diag1(:), upper1(:)
         !return variable
         complex(kind=dp)   :: res
                              
-        res = (Rs(2)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3) - Rs(1)%lower(2)*Rs(1)%upper(2)) &
-        + Rs(1)%diag(1)*(Rs(2)%diag(2)*Rs(1)%diag(3) + Rs(1)%diag(2)*Rs(2)%diag(3) - Rs(2)%lower(2)*Rs(1)%upper(2) &
-        -Rs(1)%lower(2)*Rs(2)%upper(2)) - Rs(2)%upper(1)*(Rs(1)%lower(1)*Rs(1)%diag(3)) &
-        - Rs(1)%upper(1)*(Rs(2)%lower(1)*Rs(1)%diag(3) + Rs(1)%lower(1)*Rs(2)%diag(3)))/ &
-        (Rs(1)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3)-Rs(1)%lower(2)*Rs(1)%upper(2)) - &
-        Rs(1)%upper(1)*Rs(1)%lower(1)*Rs(1)%diag(3)) ! good luck reading this
+        res = (diag1(1)*(diag(2)*diag(3) - lower(2)*upper(2)) &
+        + diag(1)*(Rs(2)%diag(2)*diag(3) + diag(2)*diag1(3) - lower1(2)*upper(2) &
+        -lower(2)*upper1(2)) - upper1(1)*(lower(1)*diag(3)) &
+        - upper(1)*(lower1(1)*diag(3) + lower(1)*diag1(3)))/ &
+        (diag(1)*(diag(2)*diag(3)-lower(2)*upper(2)) - &
+        upper(1)*lower(1)*diag(3)) ! good luck reading this
          
     end function SHyman3 
     
@@ -413,16 +414,17 @@ contains
     !  @return res: Newtown correction term, the derivative of the 
     !               of the determinant over the determinant
     !***************************************************************** 
-    function SHyman2(Rs) result(res)
+    function SHyman2(lower, diag, upper, lower1, diag1, upper1) result(res)
         implicit none
         !arguement variables
         type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        complex(kind = dp)  :: lower(:), diag(:), upper(:), lower1(:), diag1(:), upper1(:)
         !return variable
         complex(kind=dp)   :: res
                 
-        res = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
-        Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) / &
-        ((Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)*Rs(1)%lower(1)))
+        res = (diag1(1)*diag(2) + diag1(2)*diag(1) - &
+        upper1(1)*lower(1) - upper(1)*lower1(1)) / &
+        ((diag(1)*diag(2)-upper(1)*lower(1)))
 
         return
     end function SHyman2

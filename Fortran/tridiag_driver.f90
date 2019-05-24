@@ -397,28 +397,36 @@ program tridiag_driver
     
     output(1) = c
     output(2) = c1
-    k = SHyman3(output)
+    k = SHyman3(output, output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
+    output(2)%diag, output(2)%upper)
     
     write(*, '(A)') new_line('A_2')
     print *, 'Step from Hyman 3 is', k
+    print *, 'Error', abs(k) - 3.1249929625482458
+    if (abs(k) - 3.1249929625482458 < 0.0000009) then
+        print *, 'Error', abs(k) - 3.1249929625482458, 'is CORRECT'
+    end if
     write(*, '(A)') new_line('A_2')
     
     !Two dimensional test case
-    write(*, '(A)') 'Printing for HYMANS two dimensional test case'
-    write(*, '(A)') 'Printing D'
-    call print_trid(d)
-    write(*, '(A)') new_line('B_0')
-    
-    write(*, '(A)') 'Printing D prime '
-    call print_trid(d1)
-    write(*, '(A)') new_line('B_1')
+ !    write(*, '(A)') 'Printing for HYMANS two dimensional test case'
+!     write(*, '(A)') 'Printing D'
+!     call print_trid(d)
+!     write(*, '(A)') new_line('B_0')
+!
+!     write(*, '(A)') 'Printing D prime '
+!     call print_trid(d1)
+!     write(*, '(A)') new_line('B_1')
     
     output(1) = d
     output(2) = d1
     
-    k = SHyman2(output)
+    k = SHyman2(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
+    output(2)%diag, output(2)%upper)
+    
     write(*, '(A)') new_line('A_2')
     print *, 'Step from Hyman 2 is', k
+    print *, 'Error:', k - 1.9787099226967431
     write(*, '(A)') new_line('A_2')
     
         
