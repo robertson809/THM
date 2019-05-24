@@ -44,6 +44,8 @@
 module tridiag
     implicit none
     integer, parameter  :: dp = kind(1.d0)
+    real, parameter  :: e = epsilon(1.d0)
+    real, parameter  :: mu = e/2
     !****************************************************************
     !				           Type trid                            *
     !                      Tridiagonal Matrix                       *
@@ -134,7 +136,7 @@ contains
     !                   as the running values of an outside program  *
     !                                                                *                                     
     !*****************************************************************
-    function revTriHorner(x, mp) 
+    function revTriHorner(mp,x) 
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
@@ -202,7 +204,7 @@ contains
     !                   as the running values of an outside program  *
     !                                                                *                             
     !*****************************************************************
-    function triHorner(x, mp)
+    function triHorner(mp, x)
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
@@ -319,117 +321,202 @@ contains
     end function
     
     
-    !*****************************************************************
-    !                       Proper Hyman's method                
-    !*****************************************************************
-    !    Assumes a proper tridiagonal matrix with no zero entries 
-    !      along the main diagonal
-    !                        
-    !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
-    !                 at u in the first entry, value of the second 
-    !                 derivative in the second entry, and value of
-    !                 the third derivative in the third
-    !  @return res: Newtown correction term, the derivative of the 
-    !               of the determinant over the determinant
-    !*****************************************************************  
-    function PHyman(Rs) result(res)
-        implicit none
-        !arguement variables
-        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
-        !local variables
-        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
-        integer          :: n,i 
-        !return variable
-        complex(kind=dp)   :: q, q1, res
+      !*****************************************************************
+      !                       Proper Hyman's method                
+      !*****************************************************************
+      !    Assumes a proper tridiagonal matrix with no zero entries 
+      !      along the main diagonal
+      !                        
+      !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
+      !                 at u in the first entry, value of the second 
+      !                 derivative in the second entry, and value of
+      !                 the third derivative in the third
+      !  @return res: Newtown correction term, the derivative of the 
+      !               of the determinant over the determinant
+      !*****************************************************************  
+      function PHyman(Rs) result(res)
+          implicit none
+          !arguement variables
+          type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+          !local variables
+          complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
+          integer          :: n,i 
+          !return variable
+          complex(kind=dp)   :: q, q1, res
         
-        n = size(Rs(1)%diag)
-        !get x = R^-1*y
-        allocate(y(n-1))
-        y = cmplx(0,0,kind = dp)
-        y(n-1) = Rs(1)%diag(n)
-        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+          n = size(Rs(1)%diag)
+          !get x = R^-1*y
+          allocate(y(n-1))
+          y = cmplx(0,0,kind = dp)
+          y(n-1) = Rs(1)%diag(n)
+          y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
         
-        allocate(y1(n-1)) 
-        y1 = cmplx(0,0,kind = dp)
-        y1(n-1) = Rs(2)%diag(n)
-        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
+          allocate(y1(n-1)) 
+          y1 = cmplx(0,0,kind = dp)
+          y1(n-1) = Rs(2)%diag(n)
+          y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
 
-        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
+          call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
         
-        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
+          q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
                     
-        y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
-        call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
-        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
+          y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
+          call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
+          q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
         
-        !get r'/r using derivative of logarithm
-        res = cmplx(0,0,kind = dp)
-        do i = 1, n-1
-            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
-        end do
-        res = res + q1/q
-        return
-    end function PHyman 
+          !get r'/r using derivative of logarithm
+          res = cmplx(0,0,kind = dp)
+          do i = 1, n-1
+              res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
+          end do
+          res = res + q1/q
+          return
+      end function PHyman 
+      
+    
+      !*****************************************************************
+      !                       Special Hyman's method 3             
+      !*****************************************************************
+      !    Handles the special three dimensional case of a 
+      !    tridiagonal matrix polynomial
+      !                        
+      !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
+      !                 at u in the first entry, value of the second 
+      !                 derivative in the second entry, and value of
+      !                 the third derivative in the third
+      !  @return res: Newtown correction term, the derivative of the 
+      !               of the determinant over the determinant
+      !***************************************************************** 
+      function SHyman3(Rs) result(res)
+          implicit none
+          !arguement variables
+          type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+          !return variable
+          complex(kind=dp)   :: res
+                             
+          res = (Rs(2)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3) - Rs(1)%lower(2)*Rs(1)%upper(2)) &
+          + Rs(1)%diag(1)*(Rs(2)%diag(2)*Rs(1)%diag(3) + Rs(1)%diag(2)*Rs(2)%diag(3) - Rs(2)%lower(2)*Rs(1)%upper(2) &
+          -Rs(1)%lower(2)*Rs(2)%upper(2)) - Rs(2)%upper(1)*(Rs(1)%lower(1)*Rs(1)%diag(3)) &
+          - Rs(1)%upper(1)*(Rs(2)%lower(1)*Rs(1)%diag(3) + Rs(1)%lower(1)*Rs(2)%diag(3)))/ &
+          (Rs(1)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3)-Rs(1)%lower(2)*Rs(1)%upper(2)) - &
+          Rs(1)%upper(1)*Rs(1)%lower(1)*Rs(1)%diag(3)) ! good luck reading this
+         
+      end function SHyman3 
+      
+    
+      !*****************************************************************
+      !                       Special Hyman's method 2                
+      !*****************************************************************
+      !    Handles the special two dimensional case of a 
+      !    triangular matrix
+      !                        
+      !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
+      !                 at u in the first entry, value of the second 
+      !                 derivative in the second entry, and value of
+      !                 the third derivative in the third
+      !  @return res: Newtown correction term, the derivative of the 
+      !               of the determinant over the determinant
+      !***************************************************************** 
+      function SHyman2(Rs) result(res)
+          implicit none
+          !arguement variables
+          type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+          !return variable
+          complex(kind=dp)   :: res
+                
+          res = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
+          Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) / &
+          ((Rs(1)%diag(1)*Rs(1)%diag(2)-Rs(1)%upper(1)*Rs(1)%lower(1)))
+
+          return
+      end function SHyman2
+      
     
     !*****************************************************************
-    !                       Special Hyman's method                
+    !                       Inflate            
     !*****************************************************************
-    !    Handles the special two and three dimensional cases of a 
-    !    tridiagonal matrix polynomial
-    !                        
-    !  @param Rs(u):  Value of the tridiagonal Matrix Polynomial at 
-    !                 at u in the first entry, value of the second 
-    !                 derivative in the second entry, and value of
-    !                 the third derivative in the third
-    !  @return res: Newtown correction term, the derivative of the 
-    !               of the determinant over the determinant
+    !    Handles the potential underflow problem that could arise 
+    !    during backward substitution from small values in the 
+    !    subdiagonal. Inflates all values on the subdiagaonl
+    !    that are less than mu to mu.
+    !
+    !  @param A: tridiagonal matrix
+    !  
+    !  @return A: tridiagonal matrix with small subdiagonal 
+    !              entries inflated to mu    
     !***************************************************************** 
-    function SHyman(Rs) result(res)
+    subroutine inflate(A)
         implicit none
         !arguement variables
-        type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+        type(trid)       :: A
         !local variables
-        complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
-        integer          :: n,i 
-        !return variable
-        complex(kind=dp)   :: q, q1, res
-        
+        integer             :: i
+        do i = 1, size(A%lower)
+            if (abs(A%lower(i)) < mu) then
+                A%lower(i) = mu
+            end if
+        end do 
+    end subroutine inflate 
+    
+    
+    !*****************************************************************
+    !                       Hymans           
+    !*****************************************************************
+    !    Helper function to HStep, handles the special two and three
+    !   dimensional cases
+    !                        
+    !  @param A: tridiagonal matrix
+    !  @return step: the step value  
+    !***************************************************************** 
+    function Hymans(Rs) result(step)
+        implicit none
+        !arguement variables
+        type(trid)         :: Rs(3)
+        !local varaibles
+        integer             :: n
+        !return variables
+        complex(kind = dp)   :: step
         n = size(Rs(1)%diag)
-        !get x = R^-1*y
-        allocate(y(n-1))
-        y = cmplx(0,0,kind = dp)
-        y(n-1) = Rs(1)%diag(n)
-        y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
+        if (n > 3) then 
+            step = PHyman(Rs)
+        elseif (n == 3) then
+            step = SHyman3(Rs)
+        elseif (n == 2) then
+            step = SHyman2(Rs)
+        else 
+            print *, 'Thats a scalar polynomial. You need to go somewhere else'
+            call Exit(0)
+        end if
+        return 
+    end function Hymans
         
-        allocate(y1(n-1)) 
-        y1 = cmplx(0,0,kind = dp)
-        y1(n-1) = Rs(2)%diag(n)
-        y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
-
-        !****************************************************************************
-        !Do back substitution by hand
-        call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
-        !****************************************************************************
+    
+    !*****************************************************************
+    !                       HStep            
+    !*****************************************************************
+    !    Takes a matrix polynomial A and a complex scalar x and 
+    !   returns the Newton step using Hyman's method for Matrix 
+    !   polynomials
+    !                        
+    !  @param A: Matrix polynomial
+    !  @param x: complex scalar
+    !  @return step: Newtown correction term, the derivative of the 
+    !               of the determinant over the determinant
+    !***************************************************************** 
+    function Hstep(A, x) result(step)
+        implicit none
+        !arguement variables
+        complex(kind=dp)    :: x
+        type(trid_mp)       :: A
+        ! local variables 
+        integer     :: n, jold, jnew, j
+        type(trid)      :: eval(3)
+        !return variable
+        complex(kind = dp)   :: step
         
-        q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
-        !************************************************************************************
-        !Do triMult by hand
-        y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
-        !************************************************************************************
-        !************************************************************************************
-        !Do triback by hand
-        call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
-        !************************************************************************************
-        
-        q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
-        
-        !get r'/r using derivative of logarithm
-        res = cmplx(0,0,kind = dp)
-        do i = 1, n-1
-            res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
-        end do
-        res = res + q1/q
+        eval = triHorner(A,x)
+        call inflate(eval(1))
+        step = Hymans(eval)
         return
-    end function SHyman 
-       
+    end function Hstep
 end module tridiag
