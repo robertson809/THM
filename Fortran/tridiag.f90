@@ -134,7 +134,7 @@ contains
     !                   as the running values of an outside program  *
     !                                                                *                                     
     !*****************************************************************
-    function revTriHorner(x, mp) 
+    function revTriHorner(mp,x) 
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
@@ -202,7 +202,7 @@ contains
     !                   as the running values of an outside program  *
     !                                                                *                             
     !*****************************************************************
-    function triHorner(x, mp)
+    function triHorner(mp, x)
         implicit none
         !arguement variables
         complex(kind = dp)  :: x
@@ -415,6 +415,7 @@ contains
     !***************************************************************** 
     function SHyman2(lower, diag, upper, lower1, diag1, upper1) result(res)
         implicit none
+        !arguement variables
         complex(kind = dp)  :: lower(:), diag(:), upper(:), lower1(:), diag1(:), upper1(:)
         !return variable
         complex(kind=dp)   :: res
@@ -425,5 +426,83 @@ contains
 
         return
     end function SHyman2
-       
+    
+    function blockStep(start, end, eval) result(step)
+        implicit none
+        !arguement variables
+        integer :: start, end
+        type(trid)  :: eval(3)
+        !return variable
+        complex(kind = dp)   :: step
+        if (end - start >= 3) then
+            print *, 'main case'
+            step = PHyman(eval(1)%lower(start:end -1), eval(1)%diag(start:end), &
+            eval(1)%upper(start:end - 1), eval(2)%lower(start:end -1), eval(2)%diag(start:end), &
+            eval(2)%upper(start:end - 1))
+        elseif (end - start == 2) then
+            print *, 'three case'
+            step = SHyman3(eval(1)%lower(start:end -1), eval(1)%diag(start:end), &
+            eval(1)%upper(start:end - 1), eval(2)%lower(start:end -1), eval(2)%diag(start:end), &
+            eval(2)%upper(start:end - 1))
+        elseif (end - start == 1) then
+            print *, 'two case'
+            step = SHyman2(eval(1)%lower(start:end -1), eval(1)%diag(start:end), &
+            eval(1)%upper(start:end - 1), eval(2)%lower(start:end -1), eval(2)%diag(start:end), &
+            eval(2)%upper(start:end - 1))
+        elseif(end - start == 0) then
+            print *, 'one case'
+            step = eval(2)%diag(start)/eval(1)%diag(start)
+        else 
+            print *, 'error in Hstep line 456'
+        end if   
+        return
+    end function blockStep
+        
+    
+    !*****************************************************************
+    !                       HStep            
+    !*****************************************************************
+    !    Does the step
+    !                        
+    !  @param A: Matrix polynomial
+    !  @param x: complex scalar
+    !  @return step: Newtown correction term, the derivative of the 
+    !               of the determinant over the determinant
+    !***************************************************************** 
+    function Hstep(A, x) result(step)
+        implicit none
+        !arguement variables
+        complex(kind=dp)    :: x
+        type(trid_mp)       :: A
+        ! local variables 
+        integer     :: n, jold, jnew, j
+        type(trid)      :: eval(3)
+        !return variable
+        complex(kind = dp)   :: step
+        
+        !print *, 'printing unevaluated matrix polynomial'
+        call print_trid_mp(A)
+        !print *, 'printing matrix polynomial evaluated at 3'
+        eval = triHorner(A,x)
+        !call print_trid(eval(1))
+        n = A%size
+        step = 0
+        jold = 1
+        jnew = 0
+        do j = 1, n-1
+            print *, abs(eval(1)%lower(j))
+            !   print *, 'tolerance is', 0.0000009
+            if (abs(eval(1)%lower(j)) < n * tiny(1.0_dp)) then !0.0000009, n * tiny(1.0_dp)
+                print *, 'below zero'
+                jnew = j
+                step = step + blockStep(jold, jnew, eval)
+                jold = jnew + 1
+            end if
+        end do
+        jnew = n
+        print *, jold, jnew
+        step = step + blockStep(jold, jnew, eval)   
+        return
+        
+    end function Hstep
 end module tridiag

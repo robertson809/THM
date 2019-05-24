@@ -63,7 +63,6 @@ program tridiag_driver
 
     
 	! putting numbers in the arrays
-    write(*, '(A)') 'line65'
     ! (x-1)^3 = x^3 -3x^2 +3x - 1
     do i = 1, 2 
         a_0%lower(i) = -1
@@ -95,44 +94,44 @@ program tridiag_driver
     mp%degree = 3
     
     
-    write(*, '(A)') 'Printing A_0'
-    call print_trid(a_0)
-    write(*, '(A)') new_line('A_0')
-    
-    write(*, '(A)') 'Printing A_1'
-    call print_trid(a_1)
-    write(*, '(A)') new_line('A_1')
-    
-    write(*, '(A)') 'Printing A_2'
-    call print_trid(a_2)
-    write(*, '(A)') new_line('A_2')
-    
-    write(*, '(A)') 'Printing A_3'
-    call print_trid(a_3)
-    write(*, '(A)') new_line('A_3')
-    
-    write(*, '(A)') 'Printing MP'
-    call print_trid_mp(mp)
-    write(*, '(A)') new_line('A')
+!     write(*, '(A)') 'Printing A_0'
+!     call print_trid(a_0)
+!     write(*, '(A)') new_line('A_0')
+!
+!     write(*, '(A)') 'Printing A_1'
+!     call print_trid(a_1)
+!     write(*, '(A)') new_line('A_1')
+!
+!     write(*, '(A)') 'Printing A_2'
+!     call print_trid(a_2)
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') 'Printing A_3'
+!     call print_trid(a_3)
+!     write(*, '(A)') new_line('A_3')
+!
+!     write(*, '(A)') 'Printing MP'
+!     call print_trid_mp(mp)
+!     write(*, '(A)') new_line('A')
     
     
     ! Horner's tester
-    write(*, '(A)') 'Calling Horners on the MP'
-    output = triHorner(cmplx(3,0, kind = dp), mp)
-    write(*, '(A)') new_line('A_2')
-    
-    write(*, '(A)') 'MP(3)'
-    call print_trid(output(1))
-    write(*, '(A)') new_line('A_2')
-    
-    write(*, '(A)') '1st Derivative(3)'
-    call print_trid(output(2))
-    write(*, '(A)') new_line('A_2')
-    
-    write(*, '(A)') '2nd Derivative(3)'
-    call print_trid(output(3))
-    write(*, '(A)') new_line('A_2')
-    
+!     write(*, '(A)') 'Calling Horners on the MP'
+!     output = triHorner(mp, cmplx(3,0, kind = dp))
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') 'MP(3)'
+!     call print_trid(output(1))
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') '1st Derivative(3)'
+!     call print_trid(output(2))
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') '2nd Derivative(3)'
+!     call print_trid(output(3))
+!     write(*, '(A)') new_line('A_2')
+
     ! Back substitution tester
     allocate(eval%diag(5), eval%lower(4), eval%upper(4))
     eval%diag(1) = 1
@@ -156,12 +155,12 @@ program tridiag_driver
     y(n-1) = eval%diag(n)
     y(n-2) = eval%upper(n-1) !from Hyman's decomposition
 
-    write(*, '(A)') 'Calling back substitution on MP(3)'
-    call triBack(eval%lower, eval%diag(2:n-1), eval%upper(2:n-2), y) !from Hyman's decomposition
-    write(*, '(A)') 'x, from R(u)x = y from Hymans'
-    do i = 1, size(y)
-        print *, y(i)
-    end do
+!     write(*, '(A)') 'Calling back substitution on MP(3)'
+!     call triBack(eval%lower, eval%diag(2:n-1), eval%upper(2:n-2), y) !from Hyman's decomposition
+!     write(*, '(A)') 'x, from R(u)x = y from Hymans'
+!     do i = 1, size(y)
+!         print *, y(i)
+!     end do
     
     
     
@@ -203,38 +202,38 @@ program tridiag_driver
     mp2%size = 3
     mp2%degree = 2
     
-    write(*, '(A)') 'Printing for HYMANS'
-    write(*, '(A)') 'Printing A_0'
-    call print_trid(a_0)
-    write(*, '(A)') new_line('A_0')
-    
-    write(*, '(A)') 'Printing A_1'
-    call print_trid(a_1)
-    write(*, '(A)') new_line('A_1')
-    
-    write(*, '(A)') 'Printing A_2'
-    call print_trid(a_2)
-    write(*, '(A)') new_line('A_2')
-    
-    write(*, '(A)') 'Printing A_3'
-    call print_trid(a_3)
-    write(*, '(A)') new_line('A_3')
-    
-    write(*, '(A)') 'Printing MP2 for proper Hymans'
-    call print_trid_mp(mp2)
-    write(*, '(A)') new_line('A')
-    
-    !evaluate MP
-    output = triHorner(cmplx(3,0, kind = dp), mp2)
-    
-    write(*, '(A)') 'MP2(3)'
-    call print_trid(output(1))
-    write(*, '(A)') new_line('A_2')
-    
-    write(*, '(A)') 'MP2''(3)'
-    call print_trid(output(2))
-    write(*, '(A)') new_line('A_2')
-    
+!     write(*, '(A)') 'Printing for HYMANS'
+!     write(*, '(A)') 'Printing A_0'
+!     call print_trid(a_0)
+!     write(*, '(A)') new_line('A_0')
+!
+!     write(*, '(A)') 'Printing A_1'
+!     call print_trid(a_1)
+!     write(*, '(A)') new_line('A_1')
+!
+!     write(*, '(A)') 'Printing A_2'
+!     call print_trid(a_2)
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') 'Printing A_3'
+!     call print_trid(a_3)
+!     write(*, '(A)') new_line('A_3')
+!
+!     write(*, '(A)') 'Printing MP2 for proper Hymans'
+!     call print_trid_mp(mp2)
+!     write(*, '(A)') new_line('A')
+!
+!     !evaluate MP
+!     output = triHorner(mp2, cmplx(3,0, kind = dp))
+!
+!     write(*, '(A)') 'MP2(3)'
+!     call print_trid(output(1))
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') 'MP2''(3)'
+!     call print_trid(output(2))
+!     write(*, '(A)') new_line('A_2')
+!
     ! Proper Hyman tester number 2
     allocate(b_3%diag(4), b_3%upper(3), b_3%lower(3))
     allocate(b_2%diag(4), b_2%upper(3), b_2%lower(3))
@@ -244,7 +243,7 @@ program tridiag_driver
     
     b_0%lower(1) = 4
     b_0%lower(2) = 15
-    b_0%lower(3) = 1
+    b_0%lower(3) = 0
     
     b_0%diag(1) = 1
     b_0%diag(2) = 7
@@ -257,7 +256,7 @@ program tridiag_driver
 
     b_1%lower(1) = 3
     b_1%lower(2) = 14
-    b_1%lower(3) = 4
+    b_1%lower(3) = 0
     
     b_1%diag(1) = 4
     b_1%diag(2) = 6
@@ -270,7 +269,7 @@ program tridiag_driver
     
     b_2%lower(1) = 2
     b_2%lower(2) = 13
-    b_2%lower(3) = 1
+    b_2%lower(3) = 0
     
     b_2%diag(1) = 1
     b_2%diag(2) = 5
@@ -283,7 +282,7 @@ program tridiag_driver
     
     b_3%lower(1) = 1
     b_3%lower(2) = 12
-    b_3%lower(3) = 3
+    b_3%lower(3) = 0
     
     b_3%diag(1) = 3
     b_3%diag(2) = 5
@@ -301,26 +300,26 @@ program tridiag_driver
     mp3%size = 4
     mp3%degree = 3
     
-    write(*, '(A)') 'Printing for HYMANS'
-    write(*, '(A)') 'Printing B_0'
-    call print_trid(b_0)
-    write(*, '(A)') new_line('B_0')
-    
-    write(*, '(A)') 'Printing B_1'
-    call print_trid(b_1)
-    write(*, '(A)') new_line('B_1')
-    
-    write(*, '(A)') 'Printing B_2'
-    call print_trid(b_2)
-    write(*, '(A)') new_line('B_2')
-    
-    write(*, '(A)') 'Printing B_3'
-    call print_trid(b_3)
-    write(*, '(A)') new_line('B_3')
-    
-    write(*, '(A)') 'Printing MP3 for proper Hymans'
-    call print_trid_mp(mp3)
-    write(*, '(A)') new_line('A')
+!     write(*, '(A)') 'Printing for HYMANS'
+!     write(*, '(A)') 'Printing B_0'
+!     call print_trid(b_0)
+!     write(*, '(A)') new_line('B_0')
+!
+!     write(*, '(A)') 'Printing B_1'
+!     call print_trid(b_1)
+!     write(*, '(A)') new_line('B_1')
+!
+!     write(*, '(A)') 'Printing B_2'
+!     call print_trid(b_2)
+!     write(*, '(A)') new_line('B_2')
+!
+!     write(*, '(A)') 'Printing B_3'
+!     call print_trid(b_3)
+!     write(*, '(A)') new_line('B_3')
+!
+!     write(*, '(A)') 'Printing MP3 for proper Hymans'
+!     call print_trid_mp(mp3)
+!     write(*, '(A)') new_line('A')
     
     ! Proper Hyman tester number 3
     allocate(c%diag(3), c%upper(2), c%lower(2))
@@ -342,14 +341,14 @@ program tridiag_driver
     c1%upper(1) = 191
     c1%upper(2) = 42
     
-    write(*, '(A)') 'Printing for HYMANS three dimensional test case'
-    write(*, '(A)') 'Printing C'
-    call print_trid(c)
-    write(*, '(A)') new_line('B_0')
-    
-    write(*, '(A)') 'Printing c prime '
-    call print_trid(c1)
-    write(*, '(A)') new_line('B_1')
+!     write(*, '(A)') 'Printing for HYMANS three dimensional test case'
+!     write(*, '(A)') 'Printing C'
+!     call print_trid(c)
+!     write(*, '(A)') new_line('B_0')
+!
+!     write(*, '(A)') 'Printing c prime '
+!     call print_trid(c1)
+!     write(*, '(A)') new_line('B_1')
     
     ! Spedial 2x2 case
     allocate(d%diag(2), d%upper(1), d%lower(1))
@@ -367,71 +366,77 @@ program tridiag_driver
 
     
     !evaluate MP
-    output = triHorner(cmplx(3,0, kind = dp), mp3)
+    output = triHorner(mp3, cmplx(3,0, kind = dp))
 
-    write(*, '(A)') 'MP3(3)'
-    call print_trid(output(1))
-    write(*, '(A)') new_line('A_2')
-
-    write(*, '(A)') 'MP3''(3)'
-    call print_trid(output(2))
-    write(*, '(A)') new_line('A_2')
+!     write(*, '(A)') 'MP3(3)'
+!     call print_trid(output(1))
+!     write(*, '(A)') new_line('A_2')
+!
+!     write(*, '(A)') 'MP3''(3)'
+!     call print_trid(output(2))
+!     write(*, '(A)') new_line('A_2')
 
     !main Hyman tester, with output which is three trids, the value, and first two derivatives
-    k = PHyman(output(1)%lower, output(1)%diag, output(1)%upper, & 
-    output(2)%lower, output(2)%diag, output(2)%upper)
-    write(*, '(A)') new_line('A_2')
-    print *, 'Step from proper Hyman is', k
-    if (abs(k) - 2.260370269576752 < 0.0000009) then
-        print *, 'Error', abs(k) - 2.260370269576752, 'is CORRECT'
-    end if
-    write(*, '(A)') new_line('A_2')
+!     k = PHyman(output(1)%lower, output(1)%diag, output(1)%upper, &
+!     output(2)%lower, output(2)%diag, output(2)%upper)
+!     write(*, '(A)') new_line('A_2')
+!     print *, 'Step from proper Hyman is', k
+!     if (abs(k) - 2.260370269576752 < 0.0000009) then
+!         print *, 'Error', abs(k) - 2.260370269576752, 'is CORRECT'
+!     end if
+!     write(*, '(A)') new_line('A_2')
 
     
     
     !Three dimensional test case
-    write(*, '(A)') 'Printing for HYMANS three dimensional test case'
-    write(*, '(A)') 'Printing C'
-    call print_trid(c)
-    write(*, '(A)') new_line('B_0')
+!     write(*, '(A)') 'Printing for HYMANS three dimensional test case'
+!     write(*, '(A)') 'Printing C'
+!     call print_trid(c)
+!     write(*, '(A)') new_line('B_0')
+!
+!     write(*, '(A)') 'Printing c prime '
+!     call print_trid(c1)
+!     write(*, '(A)') new_line('B_1')
 
-    write(*, '(A)') 'Printing c prime '
-    call print_trid(c1)
-    write(*, '(A)') new_line('B_1')
+!     output(1) = c
+!     output(2) = c1
+!     k = SHyman3(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
+!     output(2)%diag, output(2)%upper)
 
-    output(1) = c
-    output(2) = c1
-    k = SHyman3(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
-    output(2)%diag, output(2)%upper)
-
-    write(*, '(A)') new_line('A_2')
-    print *, 'Step from Hyman 3 is', k
-    print *, 'Error', abs(k) - 3.1249929625482458
-    if (abs(k) - 3.1249929625482458 < 0.0000009) then
-        print *, 'Error', abs(k) - 3.1249929625482458, 'is CORRECT'
-    end if
-    write(*, '(A)') new_line('A_2')
+!     write(*, '(A)') new_line('A_2')
+!     print *, 'Step from Hyman 3 is', k
+!     print *, 'Error', abs(k) - 3.1249929625482458
+!     if (abs(k) - 3.1249929625482458 < 0.0000009) then
+!         print *, 'Error', abs(k) - 3.1249929625482458, 'is CORRECT'
+!     end if
+!     write(*, '(A)') new_line('A_2')
 
     !Two dimensional test case
-    write(*, '(A)') 'Printing for HYMANS two dimensional test case'
-    write(*, '(A)') 'Printing D'
-    call print_trid(d)
-    write(*, '(A)') new_line('B_0')
-
-    write(*, '(A)') 'Printing D prime '
-    call print_trid(d1)
-    write(*, '(A)') new_line('B_1')
-
-    output(1) = d
-    output(2) = d1
-
-    k = SHyman2(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
-    output(2)%diag, output(2)%upper)
-
+!     write(*, '(A)') 'Printing for HYMANS two dimensional test case'
+!     write(*, '(A)') 'Printing D'
+!     call print_trid(d)
+!     write(*, '(A)') new_line('B_0')
+!
+!     write(*, '(A)') 'Printing D prime '
+!     call print_trid(d1)
+!     write(*, '(A)') new_line('B_1')
+!
+!     output(1) = d
+!     output(2) = d1
+!
+!     k = SHyman2(output(1)%lower, output(1)%diag, output(1)%upper, output(2)%lower, &
+!     output(2)%diag, output(2)%upper)
+!
+!     write(*, '(A)') new_line('A_2')
+!     print *, 'Step from Hyman 2 is', k
+!     print *, 'Error:', k - 1.9787099226967431
+!     write(*, '(A)') new_line('A_2')
+!
+    k = Hstep(mp3, cmplx(-1.0773657356763442,0, kind = dp))
     write(*, '(A)') new_line('A_2')
-    print *, 'Step from Hyman 2 is', k
-    print *, 'Error:', k - 1.9787099226967431
-    write(*, '(A)') new_line('A_2')
+    print *, 'Step from Hstep is', k
+!     print *, 'Error:', k - 2.260370269576752
+!     write(*, '(A)') new_line('A_2')
     
         
     deallocate(a_0%lower, a_0%diag, a_0%upper, a_1%lower, a_1%diag, a_1%upper, a_2%lower, a_2%diag, a_2%upper, &
