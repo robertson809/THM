@@ -44,8 +44,8 @@
 module tridiag
     implicit none
     integer, parameter  :: dp = kind(1.d0)
-    integer, parameter  :: e = epsilon(1.d0)
-    integer, parameter  :: mu = e/2
+    real, parameter  :: e = epsilon(1.d0)
+    real, parameter  :: mu = e/2
     !****************************************************************
     !				           Type trid                            *
     !                      Tridiagonal Matrix                       *
@@ -321,7 +321,7 @@ contains
     end function
     
     
-    !*****************************************************************
+      !*****************************************************************
       !                       Proper Hyman's method                
       !*****************************************************************
       !    Assumes a proper tridiagonal matrix with no zero entries 
@@ -372,6 +372,7 @@ contains
           res = res + q1/q
           return
       end function PHyman 
+      
     
       !*****************************************************************
       !                       Special Hyman's method 3             
@@ -401,6 +402,7 @@ contains
           Rs(1)%upper(1)*Rs(1)%lower(1)*Rs(1)%diag(3)) ! good luck reading this
          
       end function SHyman3 
+      
     
       !*****************************************************************
       !                       Special Hyman's method 2                
@@ -428,16 +430,20 @@ contains
 
           return
       end function SHyman2
+      
     
     !*****************************************************************
     !                       Inflate            
     !*****************************************************************
-    !    Inflates things less than mu to mu
-    !                        
+    !    Handles the potential underflow problem that could arise 
+    !    during backward substitution from small values in the 
+    !    subdiagonal. Inflates all values on the subdiagaonl
+    !    that are less than mu to mu.
+    !
     !  @param A: tridiagonal matrix
     !  
-    !  @return A: tridiagonal matrix with entries less than mu 
-    !           inflated to mu    
+    !  @return A: tridiagonal matrix with small subdiagonal 
+    !              entries inflated to mu    
     !***************************************************************** 
     subroutine inflate(A)
         implicit none
@@ -445,7 +451,6 @@ contains
         type(trid)       :: A
         !local variables
         integer             :: i
-       
         do i = 1, size(A%lower)
             if (abs(A%lower(i)) < mu) then
                 A%lower(i) = mu
@@ -457,18 +462,41 @@ contains
     !*****************************************************************
     !                       Hymans           
     !*****************************************************************
-    !    Uses Hyman's method to find the Newton step for the matrix
-    !       polynomial
+    !    Helper function to HStep, handles the special two and three
+    !   dimensional cases
     !                        
     !  @param A: tridiagonal matrix
     !  @return step: the step value  
     !***************************************************************** 
-    function Hymans(A) 
+    function Hymans(Rs) result(step)
+        implicit none
+        !arguement variables
+        type(trid)         :: Rs(3)
+        !local varaibles
+        integer             :: n
+        !return variables
+        complex(kind = dp)   :: step
+        n = size(Rs(1)%diag)
+        if (n > 3) then 
+            step = PHyman(Rs)
+        elseif (n == 3) then
+            step = SHyman3(Rs)
+        elseif (n == 2) then
+            step = SHyman2(Rs)
+        else 
+            print *, 'Thats a scalar polynomial. You need to go somewhere else'
+            call Exit(0)
+        end if
+        return 
+    end function Hymans
+        
     
     !*****************************************************************
     !                       HStep            
     !*****************************************************************
-    !    Does the step
+    !    Takes a matrix polynomial A and a complex scalar x and 
+    !   returns the Newton step using Hyman's method for Matrix 
+    !   polynomials
     !                        
     !  @param A: Matrix polynomial
     !  @param x: complex scalar
@@ -486,30 +514,9 @@ contains
         !return variable
         complex(kind = dp)   :: step
         
-        !print *, 'printing unevaluated matrix polynomial'
-        call print_trid_mp(A)
-        !print *, 'printing matrix polynomial evaluated at 3'
         eval = triHorner(A,x)
-        call inflate(A)
-        call Hyman
-        !call print_trid(eval(1))
-        n = A%size
-        step = 0
-        jold = 1
-        jnew = 0
-        do j = 1, n-1
-            print *, abs(eval(1)%lower(j))
-            !   print *, 'tolerance is', 0.0000009
-            if (abs(eval(1)%lower(j)) < n * tiny(1.0_dp)) then !0.0000009, n * tiny(1.0_dp)
-                print *, 'below zero'
-                jnew = j
-                
-                jold = jnew + 1
-            end if
-        end do
-        jnew = n
-        print *, jold, jnew
-        
+        call inflate(eval(1))
+        step = Hymans(eval)
         return
     end function Hstep
 end module tridiag

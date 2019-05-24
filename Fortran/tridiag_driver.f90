@@ -243,7 +243,8 @@ program tridiag_driver
     
     b_0%lower(1) = 4
     b_0%lower(2) = 15
-    b_0%lower(3) = 0
+    b_0%lower(3) = tiny(1.0_dp)
+    
     
     b_0%diag(1) = 1
     b_0%diag(2) = 7
@@ -256,7 +257,7 @@ program tridiag_driver
 
     b_1%lower(1) = 3
     b_1%lower(2) = 14
-    b_1%lower(3) = 0
+    b_1%lower(3) = tiny(1.0_dp)
     
     b_1%diag(1) = 4
     b_1%diag(2) = 6
@@ -269,7 +270,7 @@ program tridiag_driver
     
     b_2%lower(1) = 2
     b_2%lower(2) = 13
-    b_2%lower(3) = 0
+    b_2%lower(3) = tiny(1.0_dp)
     
     b_2%diag(1) = 1
     b_2%diag(2) = 5
@@ -282,7 +283,7 @@ program tridiag_driver
     
     b_3%lower(1) = 1
     b_3%lower(2) = 12
-    b_3%lower(3) = 0
+    b_3%lower(3) = tiny(1.0_dp)
     
     b_3%diag(1) = 3
     b_3%diag(2) = 5
@@ -434,9 +435,9 @@ program tridiag_driver
 !
     k = Hstep(mp3, cmplx(-1.0773657356763442,0, kind = dp))
     write(*, '(A)') new_line('A_2')
-    print *, 'Step from Hstep is', k
-!     print *, 'Error:', k - 2.260370269576752
-!     write(*, '(A)') new_line('A_2')
+    print *, 'Step from Hyman is', k
+    
+
     
         
     deallocate(a_0%lower, a_0%diag, a_0%upper, a_1%lower, a_1%diag, a_1%upper, a_2%lower, a_2%diag, a_2%upper, &
