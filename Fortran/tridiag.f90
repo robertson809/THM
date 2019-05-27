@@ -43,9 +43,8 @@
 !********************************************************************************
 module tridiag
     implicit none
-    integer, parameter  :: dp = kind(1.d0)
-    real, parameter  :: e = epsilon(1.d0)
-    real, parameter  :: mu = e/2
+    integer, parameter          :: dp = kind(1.d0)
+    real(kind=dp), parameter    :: eps = 2.0_dp**(-52), mu = 2.0_dp**(-53)
     !****************************************************************
     !				           Type trid                            *
     !                      Tridiagonal Matrix                       *
