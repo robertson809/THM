@@ -54,7 +54,6 @@ module tridiag
         complex(kind=dp), allocatable :: diag(:), upper(:), lower(:)
     end type trid
     
-    
     !**************************************************************
     !				           Type trid_mp		                  *
     !                Tridiagonal Matrix Polynomial	              *
@@ -68,7 +67,6 @@ module tridiag
         integer                 :: degree
     end type trid_mp
     
-    
 contains
     !**************************************************************
     !				Subroutine print_trid                         
@@ -77,10 +75,10 @@ contains
     subroutine print_trid(a)
         implicit none
         ! argument variables
-        type(trid)      :: a
+        type(trid), intent(in)  :: a
         ! local variables
-        integer         :: i
-        integer         :: n
+        integer                 :: i
+        integer                 :: n
         
         n = size(a%diag)	
         ! print statements
@@ -91,7 +89,6 @@ contains
         write(*,'(F0.0,SP,F0.0,"i", F0.0,SP,F0.0,"i")') a%lower(n-1), a%diag(n)
     end subroutine print_trid
     
-    
     !**************************************************************
     !				Subroutine print_trid_mp                       
     !   Prints a tridiagonal matrix polynomial as additions of 
@@ -100,12 +97,12 @@ contains
     subroutine print_trid_mp(a)
         implicit none
         !arguement variables
-        type(trid_mp)       :: a
+        type(trid_mp), intent(in)   :: a
         !local variables
-        integer             :: i
-        integer             :: degree
-        degree = size(a%coef)
+        integer                     :: i
+        integer                     :: degree
         
+        degree = size(a%coef)
         !printing
         do i = 1, degree 
             call print_trid(a%coef(i))
@@ -138,30 +135,30 @@ contains
     function revTriHorner(mp,x) 
         implicit none
         !arguement variables
-        complex(kind = dp)  :: x
-        type(trid_mp)       :: mp
+        complex(kind=dp), intent(in)    :: x
+        type(trid_mp), intent(in)       :: mp
         !local variables
-        integer             :: i, xx
+        integer                         :: i, xx
         !return variables
-        type(trid)          :: comp
-        type(trid)          :: compD2
-        type(trid)          :: compD1
-        type(trid)          :: revTriHorner(3)
+        type(trid)                      :: comp
+        type(trid)                      :: compD2
+        type(trid)                      :: compD1
+        type(trid)                      :: revTriHorner(3)
             
         !initial coefficients, initialize the derivatives to 0
         comp = mp%coef(mp%degree + 1)
         !get 0 arrays for the first and second derivatives
         !first derivative, three trid data types, all zero, of the right length (size)
         allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
-        compD1%upper = cmplx(0,0,kind = dp)
-        compD1%diag = cmplx(0,0, kind = dp)
-        compD1%lower = cmplx(0,0, kind = dp)
+        compD1%upper = cmplx(0,0,kind=dp)
+        compD1%diag = cmplx(0,0,kind=dp)
+        compD1%lower = cmplx(0,0,kind=dp)
         
         !second derivative
         allocate(compD2%upper(mp%size -1), compD2%diag(mp%size), compD2%lower(mp%size -1))
-        compD2%upper = cmplx(0,0, kind = dp)
-        compD2%diag = cmplx(0,0, kind = dp)
-        compD2%lower = cmplx(0,0, kind = dp)
+        compD2%upper = cmplx(0,0,kind=dp)
+        compD2%diag = cmplx(0,0,kind=dp)
+        compD2%lower = cmplx(0,0,kind=dp)
         
         !horner's method
         !evaluate the reverseal polynomial
@@ -180,6 +177,9 @@ contains
             comp%diag = comp%diag * xx + mp%coef(i)%diag
             comp%upper = comp%upper * xx + mp%coef(i)%upper
         end do
+        compD2%lower = compD2%lower * 2.0
+        compD2%diag = compD2%diag * 2.0
+        compD2%upper = compD2%upper * 2.0
 
         revTriHorner = [comp, compD1, compD2]
         return
@@ -206,27 +206,27 @@ contains
     function triHorner(mp, x)
         implicit none
         !arguement variables
-        complex(kind = dp)  :: x
-        type(trid_mp)       :: mp
+        complex(kind=dp), intent(in)    :: x
+        type(trid_mp)                   :: mp
         !local variables
-        integer             :: i, xx
+        integer                         :: i, xx
         !return variables
-        type(trid)          :: comp
-        type(trid)          :: compD2
-        type(trid)          :: compD1
-        type(trid)          :: triHorner(3)
+        type(trid)                      :: comp
+        type(trid)                      :: compD2
+        type(trid)                      :: compD1
+        type(trid)                      :: triHorner(3)
              
         !first derivative, three trid data types, all zero, of the right length (size)
         allocate(compD1%upper(mp%size -1), compD1%diag(mp%size), compD1%lower(mp%size -1))
-        compD1%lower = cmplx(0,0,kind = dp) !sets everything in the array to zero
-        compD1%diag = cmplx(0,0,kind = dp) 
-        compD1%upper = cmplx(0,0,kind = dp) 
+        compD1%lower = cmplx(0,0,kind=dp)
+        compD1%diag = cmplx(0,0,kind=dp) 
+        compD1%upper = cmplx(0,0,kind=dp) 
         
         !second derivative
         allocate(compD2%upper(mp%size -1), compD2%diag(mp%size), compD2%lower(mp%size -1))
-        compD2%lower = cmplx(0,0,kind = dp)
-        compD2%diag = cmplx(0,0,kind = dp)
-        compD2%upper = cmplx(0,0,kind = dp)
+        compD2%lower = cmplx(0,0,kind=dp)
+        compD2%diag = cmplx(0,0,kind=dp)
+        compD2%upper = cmplx(0,0,kind=dp)
         
         !horner's method
         comp = mp%coef(mp%degree + 1)
@@ -263,7 +263,7 @@ contains
     !    diagonal, the upper diagonal and the "super" upper diagonal *
     !    written for the R matrix of an upper hessenburg Matrix      *
     !    Polynomial Hyman's method decomposition. Below, n is the    *
-    !    size of the pre-Hyman's method matrix polynomial.            *
+    !    size of the pre-Hyman's method matrix polynomial.           *
     !  @param y:  n - 1 vertical vector, where n is the size of the  *
     !              original matrix polynomial                        *
     !  @param R(u):  A tridiagonal matrix with entries on the main,  *
@@ -271,18 +271,20 @@ contains
     !  @return y: the solution to the system will be overwritten in  *
     !              the y parameter                                   *                          
     !*****************************************************************
-    subroutine triBack(bottom, middle, top, y)
+    subroutine triBack(n, bottom, middle, top, y)
         implicit none
         !arguement variables
-        complex(kind=dp) :: bottom(:), middle(:), top(:), y(:)
+        integer, intent(in)             :: n
+        complex(kind=dp), intent(in)    :: bottom(:), middle(:), top(:)
+        complex(kind=dp), intent(inout) :: y(:)
         !local variables
-        integer             :: n, i
-        n = size(bottom)
+        integer                         :: i
+        
         y(n) = y(n)/bottom(n) !first case 
         y(n-1) = (y(n-1) - middle(n-1) * y(n))/bottom(n-1) !second case
         do i = n-2,1,-1
             y(i) = (y(i) - top(i)*y(i+2) - middle(i)*y(i+1))/bottom(i)
-        end do 
+        end do
     end subroutine triBack  
     
     
@@ -297,16 +299,16 @@ contains
 	!  @param top - the 2 diagonal
     !  @return comp - Ax                                 
     !*****************************************************************
-    function triMult(bottom, middle, top, x) result(comp)
+    function triMult(n, bottom, middle, top, x) result(comp)
         implicit none
         !arguement variables
-        complex(kind = dp)  :: x(:), bottom(:), middle(:), top(:)
+        integer, intent(in)             :: n
+        complex(kind=dp), intent(in)    :: x(:), bottom(:), middle(:), top(:)
         !local variables
-        integer             :: i, n
+        integer                         :: i
         !return variables
-        complex(kind = dp), allocatable :: comp(:)
+        complex(kind=dp), allocatable   :: comp(:)
         
-        n = size(bottom)
         allocate(comp(n))
         if(size(top) > 0) then
             !upper triangular tridiagonal matrix multiplication
@@ -333,37 +335,41 @@ contains
       !  @return res: Newtown correction term, the derivative of the 
       !               of the determinant over the determinant
       !*****************************************************************  
-      function PHyman(Rs) result(res)
+      function PHyman(n, Rs) result(res)
           implicit none
           !arguement variables
-          type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+          integer, intent(in)           :: n
+          type(trid), intent(in)        :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
           !local variables
           complex(kind=dp), allocatable :: bottom(:), middle(:), top(:), y(:), y1(:), x1(:)
-          integer          :: n,i 
+          integer                       :: n,i 
           !return variable
-          complex(kind=dp)   :: q, q1, res
+          complex(kind=dp)              :: q, q1, res
         
           n = size(Rs(1)%diag)
-          !get x = R^-1*y
+          ! create y Hyman's decomposition
           allocate(y(n-1))
-          y = cmplx(0,0,kind = dp)
+          y(1:n-3) = (/ (cmplx(0,0,kind = dp), i=1,n-3) /)
+          y(n-2) = Rs(1)%upper(n-1)
           y(n-1) = Rs(1)%diag(n)
-          y(n-2) = Rs(1)%upper(n-1) !create y Hyman's decomposition
-        
+          
+          ! create y' Hyman's decomposition
           allocate(y1(n-1)) 
-          y1 = cmplx(0,0,kind = dp)
+          y1(1:n-3) = (/ (cmplx(0,0,kind = dp), i=1,n-3) /)
+          y1(n-2) = Rs(2)%upper(n-1)
           y1(n-1) = Rs(2)%diag(n)
-          y1(n-2) = Rs(2)%upper(n-1) !create y' Hyman's decomposition
 
-          call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y) !put x into y
-        
-          q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2)) !at this point, y is x
-                    
-          y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y) !y1 = y'-R'x
-          call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)!put x' from Rx' = y1 into y1 
+          ! solve Rx=y, store solution in y
+          call triBack(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y)
+          ! compute q = -h^(T)y, where y is solution from above
+          q = -(Rs(1)%diag(1) * y(1) + Rs(1)%upper(1) * y(2))
+          ! solve Rx=y' - R'y, where y is solution from above
+          y1 = y1 - triMult(Rs(2)%lower, Rs(2)%diag(2:n-1), Rs(2)%upper(2:n-2), y)
+          call triback(Rs(1)%lower, Rs(1)%diag(2:n-1), Rs(1)%upper(2:n-2), y1)
+          ! compute q' = -(h'^(T)y + h^(T)y')
           q1 = -((Rs(2)%diag(1)*y(1) + Rs(2)%upper(1)*y(2)) + (Rs(1)%diag(1)*y1(1) + Rs(1)%upper(1)*y1(2)))
         
-          !get r'/r using derivative of logarithm
+          ! get r'/r using derivative of logarithm
           res = cmplx(0,0,kind = dp)
           do i = 1, n-1
               res = res + Rs(2)%lower(i)/Rs(1)%lower(i)
@@ -389,9 +395,9 @@ contains
       function SHyman3(Rs) result(res)
           implicit none
           !arguement variables
-          type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+          type(trid)            :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
           !return variable
-          complex(kind=dp)   :: res
+          complex(kind=dp)      :: res
                              
           res = (Rs(2)%diag(1)*(Rs(1)%diag(2)*Rs(1)%diag(3) - Rs(1)%lower(2)*Rs(1)%upper(2)) &
           + Rs(1)%diag(1)*(Rs(2)%diag(2)*Rs(1)%diag(3) + Rs(1)%diag(2)*Rs(2)%diag(3) - Rs(2)%lower(2)*Rs(1)%upper(2) &
@@ -419,9 +425,9 @@ contains
       function SHyman2(Rs) result(res)
           implicit none
           !arguement variables
-          type(trid)          :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
+          type(trid)            :: Rs(3) !evaluation in first entry, 1st deriv in second, 2nd deriv in third
           !return variable
-          complex(kind=dp)   :: res
+          complex(kind=dp)      :: res
                 
           res = (Rs(2)%diag(1)*Rs(1)%diag(2) + Rs(2)%diag(2)*Rs(1)%diag(1) - &
           Rs(2)%upper(1)*Rs(1)%lower(1) - Rs(1)%upper(1)*Rs(2)%lower(1)) / &
@@ -447,9 +453,10 @@ contains
     subroutine inflate(A)
         implicit none
         !arguement variables
-        type(trid)       :: A
+        type(trid)          :: A
         !local variables
         integer             :: i
+        
         do i = 1, size(A%lower)
             if (abs(A%lower(i)) < mu) then
                 A%lower(i) = mu
@@ -470,11 +477,12 @@ contains
     function Hymans(Rs) result(step)
         implicit none
         !arguement variables
-        type(trid)         :: Rs(3)
+        type(trid)          :: Rs(3)
         !local varaibles
         integer             :: n
         !return variables
-        complex(kind = dp)   :: step
+        complex(kind = dp)  :: step
+        
         n = size(Rs(1)%diag)
         if (n > 3) then 
             step = PHyman(Rs)
@@ -482,9 +490,6 @@ contains
             step = SHyman3(Rs)
         elseif (n == 2) then
             step = SHyman2(Rs)
-        else 
-            print *, 'Thats a scalar polynomial. You need to go somewhere else'
-            call Exit(0)
         end if
         return 
     end function Hymans
@@ -508,10 +513,10 @@ contains
         complex(kind=dp)    :: x
         type(trid_mp)       :: A
         ! local variables 
-        integer     :: n, jold, jnew, j
-        type(trid)      :: eval(3)
+        integer             :: n, jold, jnew, j
+        type(trid)          :: eval(3)
         !return variable
-        complex(kind = dp)   :: step
+        complex(kind = dp)  :: step
         
         eval = triHorner(A,x)
         call inflate(eval(1))
