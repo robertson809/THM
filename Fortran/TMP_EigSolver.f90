@@ -143,17 +143,11 @@ contains
         complex(kind=dp), intent(out)   :: x(n)
         ! local variables
         integer                         :: i
-        complex(kind=dp)                :: tmp(2)
-        ! intrinsic function
-        intrinsic                       :: conjg
         
         ! rotations 1,...,n-1
         do i=1,n-1
-            ! update x
-            tmp(1) = conjg(qmat(i,1))*x(i) + conjg(qmat(i,2))*x(i+1)
-            tmp(2) = -qmat(i,2)*x(i) + qmat(i,1)*x(i+1)
-            x(i) = tmp(1)
-            x(i+1) = tmp(2)
+            ! apply rotation to (x(i),x(i+1))
+            call ApplyRot(qmat(i,1),qmat(i,2),x(i),x(i+1))
         end do
     end subroutine QMult
     !****************************************************************
@@ -172,56 +166,85 @@ contains
         complex(kind=dp), intent(out)   :: qmat(n-1,2)
         ! local variables
         integer                         :: i
-        real(kind=dp)                   :: scale, sum
-        complex(kind=dp)                :: tmp(2)
-        ! external subroutine
-        external                        :: zlassq
-        ! intrinsic function
-        intrinsic                       :: conjg, sqrt
+        real(kind=dp)                   :: r
         
         ! rotations 1,...,n-2
         do i=1,n-2
-            ! compute r = sqrt(main(i)^2+lower(i)^2)
-            tmp(1) = mat%main(i)
-            tmp(2) = mat%lower(i)
-            scale = 0.0_dp
-            sum = 1.0_dp
-            call zlassq(2, tmp, 1, scale, sum)
-            sum = scale*sqrt(sum)
-            ! store rotator
-            qmat(i,1) = mat%main(i)/sum
-            qmat(i,2) = mat%lower(i)/sum
-            ! update mat
-            mat%main(i) = sum
-            tmp(1) = conjg(qmat(i,1))*mat%upper(i) + conjg(qmat(i,2))*mat%main(i+1)
-            tmp(2) = -qmat(i,2)*mat%upper(i) + qmat(i,1)*mat%main(i+1)
-            mat%upper(i) = tmp(1)
-            mat%main(i+1) = tmp(2)
-            tmp(1) = conjg(qmat(i,2))*mat%upper(i+1)
-            tmp(2) = qmat(i,1)*mat%upper(i+1)
-            mat%lower(i) = tmp(1)
-            mat%upper(i+1) = tmp(2)
+            ! build rotation for (main(i),lower(i))
+            call BuildRot(mat%main(i),mat%lower(i),qmat(i,1),qmat(i,2),r)
+            ! apply rotation to (main(i),lower(i))
+            mat%main(i) = r
+            mat%lower(i) = cmplx(0,0,kind=dp)
+            ! apply rotation to (upper(i),main(i+1))
+            call ApplyRot(qmat(i,1),qmat(i,2),mat%upper(i),mat%main(i+1))
+            ! apply rotation to (0,upper(i+1))
+            call ApplyRot(qmat(i,1),qmat(i,2),mat%lower(i),mat%upper(i+1))
         end do
         ! rotation n-1
         i = n-1
-        ! compute r = sqrt(main(i)^2+lower(i)^2)
-        tmp(1) = mat%main(i)
-        tmp(2) = mat%lower(i)
-        scale = 0.0_dp
-        sum = 1.0_dp
-        call zlassq(2, tmp, 1, scale, sum)
-        sum = scale*sqrt(sum)
-        ! store rotator
-        qmat(i,1) = mat%main(i)/sum
-        qmat(i,2) = mat%lower(i)/sum
-        ! update mat
-        mat%main(i) = sum
-        tmp(1) = conjg(qmat(i,1))*mat%upper(i) + conjg(qmat(i,2))*mat%main(i+1)
-        tmp(2) = -qmat(i,2)*mat%upper(i) + qmat(i,1)*mat%main(i+1)
-        mat%upper(i) = tmp(1)
-        mat%main(i+1) = tmp(2)
-        mat%lower(i) = 0.0_dp
+        ! build rotation for (main(i),lower(i))
+        call BuildRot(mat%main(i),mat%lower(i),qmat(i,1),qmat(i,2),r)
+        ! apply rotation to (main(i),lower(i))
+        mat%main(i) = r
+        mat%lower(i) = cmplx(0,0,kind=dp)
+        ! apply rotation to (upper(i),main(i+1))
+        call ApplyRot(qmat(i,1),qmat(i,2),mat%upper(i),mat%main(i+1))
     end subroutine
+    !****************************************************************
+    !				           BuildRot                             *
+    !****************************************************************
+    !   Build rotation transformation for pair (x,y).
+    !****************************************************************
+    subroutine BuildRot(x,y,c,s,r)
+        implicit none
+        ! argument variables
+        complex(kind=dp), intent(in)    :: x, y
+        complex(kind=dp), intent(out)   :: c, s
+        real(kind=dp), intent(out)      :: r
+        ! local variables
+        real(kind=dp)                   :: m
+        complex(kind=dp)                :: tmp_x, tmp_y
+        ! intrinsic functions
+        intrinsic                       :: abs, max, sqrt
+        
+        ! maximum abs value
+        m = max(abs(x),abs(y))
+        ! compute rotation (c,s) and norm r
+        if(m .le. small) then
+            c = cmplx(1,0,kind=dp)
+            s = cmplx(0,0,kind=dp)
+            r = cmplx(0,0,kind=dp)
+        else
+            tmp_x = x/m
+            tmp_y = y/m
+            r = sqrt(abs(tmp_x)**2+abs(tmp_y)**2)
+            c = tmp_x/r
+            s = tmp_y/r
+            r = m*r
+        end if
+    end subroutine BuildRot
+    !****************************************************************
+    !				           ApplyRot                             *
+    !****************************************************************
+    !   Apply rotation stored in (c,s) to pair (x,y).
+    !****************************************************************
+    subroutine ApplyRot(c,s,x,y)
+        implicit none
+        ! argument variables
+        complex(kind=dp), intent(in)    :: c, s
+        complex(kind=dp), intent(inout) :: x, y
+        ! local variables
+        complex(kind=dp)                :: tmp(2)
+        ! intrinsic functions
+        intrinsic                       :: conjg
+        
+        ! apply rotation to (x,y)
+        tmp(1) = conjg(c)*x + conjg(s)*y
+        tmp(2) = -s*x + c*y
+        ! update (x,y)
+        x = tmp(1)
+        y = tmp(2)
+    end subroutine ApplyRot
     !****************************************************************
     !				           FroNorm                              *
     !****************************************************************
