@@ -43,8 +43,9 @@
 !********************************************************************************
 program tridiag_driver
     use tridiag
+    implicit none
     ! loop counter
-    integer :: i
+    integer :: i, n
     ! tridiagonal matrix polynomial
     type(trid) :: a_3, a_2, a_1, a_0, b_0, b_1, b_2, b_3, c, c1, d, d1, eval
     complex(kind=dp), allocatable :: y(:), y2(:), v(:)

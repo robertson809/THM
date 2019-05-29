@@ -3,13 +3,17 @@
 #############################################
 include make.inc
 
-install: tridiag
+install: tmp_eigsolver tridiag
+	
+tmp_eigsolver:
+	$(FC) $(FFLAGS) -o tmp_driver fpml.f90 tmp_eigsolver.f90 tmp_driver.f90 -lblas -llapack
 	
 tridiag:
 	$(FC) $(FFLAGS) -o tridiag_driver tridiag.f90 tridiag_driver.f90
 	
 uninstall: clean
 	@rm -f tridiag_driver
+	@rm -f tmp_driver
 	
 clean:
 	@rm -f *.mod
