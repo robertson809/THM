@@ -44,24 +44,24 @@ contains
     !   available for the random number generator in random_number for
     !   the life of the program. 
     !****************************************************************
-    subroutine InitRandomSeed()
-        implicit none
-        ! local variables
-        integer                             :: i, n, clock
-        integer, dimension(:), allocatable  :: seed
-        ! intrinsic subroutines
-        intrinsic                           :: random_seed, system_clock
-        
-        ! main
-        call random_seed(size = n)
-        allocate(seed(n))
-        
-        call system_clock(count = clock)
-        seed = clock + 37 * (/ (i - 1, i = 1,n) /)
-        call random_seed(put = seed)
-        
-        deallocate(seed)
-    end subroutine InitRandomSeed
+    !subroutine InitRandomSeed()
+    !    implicit none
+    !    ! local variables
+    !    integer                             :: i, n, clock
+    !    integer, dimension(:), allocatable  :: seed
+    !    ! intrinsic subroutines
+    !    intrinsic                           :: random_seed, system_clock
+    !    
+    !    ! main
+    !    call random_seed(size = n)
+    !    allocate(seed(n))
+    !    
+    !    call system_clock(count = clock)
+    !    seed = clock + 37 * (/ (i - 1, i = 1,n) /)
+    !    call random_seed(put = seed)
+    !    
+    !    deallocate(seed)
+    !end subroutine InitRandomSeed
     !****************************************************************
     !				           RandCmplxTriMP                       *
     !****************************************************************
@@ -98,18 +98,18 @@ contains
     !   Creates complex random number with real and imaginary part
     !   uniformly distributed in (a,b).
     !****************************************************************
-    subroutine CmplxRandomNumber(a,b,res)
-        implicit none
-        ! argument variables
-        real(kind=dp)           :: a, b
-        complex(kind=dp)        :: res
-        ! local variables
-        real(kind=dp)           :: r1, r2
-        
-        ! call random_number
-        call random_number(r1)
-        call random_number(r2)
-        ! store result
-        res = cmplx(a + (b-a)*r1,a + (b-a)*r2,kind=dp)
-    end subroutine CmplxRandomNumber
+    !subroutine CmplxRandomNumber(a,b,res)
+    !    implicit none
+    !    ! argument variables
+    !    real(kind=dp)           :: a, b
+    !    complex(kind=dp)        :: res
+    !    ! local variables
+    !    real(kind=dp)           :: r1, r2
+    !    
+    !    ! call random_number
+    !    call random_number(r1)
+    !    call random_number(r2)
+    !    ! store result
+    !    res = cmplx(a + (b-a)*r1,a + (b-a)*r2,kind=dp)
+    !end subroutine CmplxRandomNumber
 end program TMP_Driver
