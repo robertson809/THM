@@ -51,6 +51,7 @@ contains
             call FroNorm(mat_poly%size,mat_poly%coeff(i),alpha(i))
         end do
         ! initial estimates
+        write(*,*) 'initial estimates'
         call InitEst(mat_poly,eigval,eigvec)
         ! main loop
         num_eig = 0
@@ -99,8 +100,8 @@ contains
         ! argument variables
         type(trid_mp), intent(in)       :: mat_poly
         integer, intent(out)            :: conv
-        real(kind=dp), intent(in)       :: alpha(:), berr, cond
-        complex(kind=dp), intent(in)    :: z, v(:)
+        real(kind=dp), intent(in)       :: alpha(mat_poly%degree+1), berr, cond
+        complex(kind=dp), intent(in)    :: z, v(mat_poly%size)
         complex(kind=dp), intent(out)   :: lag_term1, lag_term2
         ! local variables
         type(trid)                      :: triHorner(3)
@@ -121,30 +122,77 @@ contains
         ! argument variables
         type(trid_mp), intent(in)       :: mat_poly
         integer, intent(out)            :: conv
-        real(kind=dp), intent(in)       :: alpha(:), r
+        real(kind=dp), intent(in)       :: alpha(mat_poly%degree+1), r
         real(kind=dp), intent(out)      :: berr, cond
-        complex(kind=dp), intent(in)    :: z, v(:)
+        complex(kind=dp), intent(in)    :: z, v(mat_poly%size)
         complex(kind=dp), intent(out)   :: lag_term1, lag_term2
         ! local variables
         integer                         :: k
         type(trid)                      :: triHorner(3)
+        real(kind=dp)                   :: res
+        complex(kind=dp)                :: y(mat_poly%size-1,3), q(3), sum
         ! external function
-        external                        :: dznrm2
         real(kind=dp)                   :: dznrm2
+        complex(kind=dp)                :: zdotu
+        external                        :: dznrm2, zdotu
             
         ! call Horner's method
         call Horner(mat_poly,z,triHorner)
-        ! compute backward error
+        ! backward error terms
         berr = alpha(mat_poly%degree+1)
         do k=mat_poly%degree,1,-1
             berr = r*berr + alpha(k)
         end do
-        berr = dznrm2(mat_poly%size,TriMult(mat_poly%size,triHorner(1),v),1)
-        write(*,*) berr
-        ! check for subdiagonal zeros in triHorner(1)
-        do k=1,mat_poly%size-1
-            if(abs(triHorner(1)%lower(k)) .le. small) triHorner(1)%lower(k) = small
-        end do
+        res = dznrm2(mat_poly%size,TriMult(mat_poly%size, &
+                        triHorner(1)%lower,triHorner(1)%main,triHorner(1)%upper,v),1)
+        ! compute lag terms or backward error and condition number
+        if(res > eps*berr) then
+            ! check for subdiagonal zeros in triHorner(1)
+            do k=1,mat_poly%size-1
+                if(abs(triHorner(1)%lower(k)) .le. small) triHorner(1)%lower(k) = small
+            end do
+            ! store initial y values
+            y = cmplx(0,0,kind=dp)
+            y(mat_poly%size-2,1) = triHorner(1)%upper(mat_poly%size-1)
+            y(mat_poly%size-1,1) = triHorner(1)%main(mat_poly%size)
+            y(mat_poly%size-2,2) = triHorner(2)%upper(mat_poly%size-1)
+            y(mat_poly%size-1,2) = triHorner(2)%main(mat_poly%size)
+            y(mat_poly%size-2,3) = triHorner(3)%upper(mat_poly%size-1)
+            y(mat_poly%size-1,3) = triHorner(3)%main(mat_poly%size)
+            ! solve linear systems: Rx=y, Rx'=y'-R'x, and Rx''=y''-R''x-2R'x'
+            call TriBackSub(mat_poly%size-1,triHorner(1)%lower(1:mat_poly%size-1), &
+                                triHorner(1)%main(2:mat_poly%size-1), &
+                                triHorner(1)%upper(2:mat_poly%size-2),y(1:mat_poly%size-1,1))
+            y(1:mat_poly%size-1,2) = y(1:mat_poly%size-1,2) - TriMult(mat_poly%size-1, &
+                                triHorner(2)%lower,triHorner(2)%main,triHorner(2)%upper,y(1:mat_poly%size-1,1))
+            call TriBackSub(mat_poly%size-1,triHorner(2)%lower(1:mat_poly%size-1), &
+                                triHorner(2)%main(2:mat_poly%size-1), &
+                                triHorner(2)%upper(2:mat_poly%size-2),y(1:mat_poly%size-1,2))
+            y(1:mat_poly%size-1,3) = y(1:mat_poly%size-1,3) - TriMult(mat_poly%size-1, &
+                                triHorner(3)%lower,triHorner(3)%main,triHorner(3)%upper,y(1:mat_poly%size-1,1)) &
+                                - 2.0_dp*TriMult(mat_poly%size-1, &
+                                triHorner(2)%lower,triHorner(2)%main,triHorner(2)%upper,y(1:mat_poly%size-1,2))
+            ! compute q=eta-h^Tx, q'=eta'-h'^Tx-h^Tx', q''=eta''-h''^Tx-2h'^Tx'-h^Tx''
+            q(1) = -zdotu(2,(/ triHorner(1)%main(1),triHorner(1)%upper(1) /),1,y(1:2,1),1)
+            q(2) = -zdotu(2,(/ triHorner(2)%main(1),triHorner(2)%upper(1) /),1,y(1:2,1),1) &
+                    -zdotu(2,(/ triHorner(1)%main(1),triHorner(1)%upper(1) /),1,y(1:2,2),1)
+            q(3) = -zdotu(2,(/ triHorner(3)%main(1),triHorner(3)%upper(1) /),1,y(1:2,1),1) &
+                    -2.0_dp*zdotu(2,(/ triHorner(2)%main(1),triHorner(2)%upper(1) /),1,y(1:2,2),1) &
+                    -zdotu(2,(/ triHorner(1)%main(1),triHorner(1)%upper(1) /),y(1:2,3),1)
+            ! laguerre terms
+            lag_term1 = q(2)/q(1)
+            lag_term2 = lag_term1**2 - q(3)/q(1)
+            ! update laguerre terms with log derivatives
+            do k=1,mat_poly%size-1
+                sum = triHorner(2)%lower(k)/triHorner(1)%lower(k)
+                lag_term1 = lag_term1 + sum
+                lag_term2 = lag_term2 - triHorner(3)%lower(k)/triHorner(1)%lower(k) + sum**2
+            end do
+        else
+            ! compute condition number
+            berr = res/berr
+            conv = 1
+        end if
         
         ! deallocate triHorner memory (allocated in Horner)
         do k=1,3
@@ -166,7 +214,7 @@ contains
         ! local variables
         integer                         :: k
         
-        ! polynomial evaluation
+        ! polynomial evaluation (note triHorner(1) gets allocated memory seperately from mat_poly%coeff)
         triHorner(1) = mat_poly%coeff(mat_poly%degree+1)
         
         ! polynomial derivative evaluation
@@ -209,7 +257,8 @@ contains
         implicit none
         ! argument variables
         type(trid_mp), intent(in)       :: mat_poly
-        complex(kind=dp), intent(out)   :: eigval(:), eigvec(:,:)
+        complex(kind=dp), intent(out)   :: eigval(mat_poly%size*mat_poly%degree), &
+                                            eigvec(mat_poly%size,mat_poly%size*mat_poly%degree)
         ! local variables
         integer                         :: j, k
         type(trid)                      :: mat
@@ -220,8 +269,9 @@ contains
         real(kind=dp)                   :: berr(mat_poly%degree), cond(mat_poly%degree)
         complex(kind=dp)                :: poly(mat_poly%degree+1)
         ! external function
-        external                        :: zdotc
         complex(kind=dp)                :: zdotc
+        real(kind=dp)                   :: dznrm2
+        external                        :: zdotc, dznrm2
         
         ! set mat to leading coefficient
         mat = mat_poly%coeff(mat_poly%degree+1)
@@ -236,58 +286,140 @@ contains
             call QMult(mat_poly%size,qmat,x)
             ! build coefficients of scalar polynomial
             do k=1,mat_poly%degree+1
-                poly(k) = zdotc(mat_poly%size,x,1,TriMult(mat_poly%size,mat_poly%coeff(k),x),1)
+                poly(k) = zdotc(mat_poly%size,x,1,TriMult(mat_poly%size, &
+                            mat_poly%coeff(k)%lower,mat_poly%coeff(k)%main,mat_poly%coeff(k)%upper,x),1)
             end do
             ! compute roots of polynomial
             call main(poly, mat_poly%degree, eigval((j-1)*mat_poly%degree+1:j*mat_poly%degree), berr, cond, conv, itmax)
         end do
         ! intitial estimate eigenvectors
+        call InitRandomSeed()
         do j=1,mat_poly%size*mat_poly%degree
             z = eigval(j)
-            ! evaluate matrix polynomial
+            ! store normalized random eigenvector
+            call RandomCmplxVec(mat_poly%size,eigvec(:,j))
+            eigvec(:,j) = eigvec(:,j)/dznrm2(mat_poly%size,eigvec(:,j),1)
+            ! update eigenvector
             if(abs(z)>1) then
-                ! reversal Horner's method
                 z = 1/z
-                mat = mat_poly%coeff(1)
-                do k=2,mat_poly%degree+1
-                    mat%upper = mat%upper*z + mat_poly%coeff(k)%upper
-                    mat%main = mat%main*z + mat_poly%coeff(k)%main
-                    mat%lower = mat%lower*z + mat_poly%coeff(k)%lower
-                end do
+                call RevEigvecUpd(mat_poly,z,eigvec(:,j))
             else
-                ! standard Horner's method
-                mat = mat_poly%coeff(mat_poly%degree+1)
-                do k=mat_poly%degree,1,-1
-                    mat%upper = mat%upper*z + mat_poly%coeff(k)%upper
-                    mat%main = mat%main*z + mat_poly%coeff(k)%main
-                    mat%lower = mat%lower*z + mat_poly%coeff(k)%lower
-                end do
+                call EigvecUpd(mat_poly,z,eigvec(:,j))
             end if
+            ! normalize eigenvector
+            eigvec(:,j) = eigvec(:,j)/dznrm2(mat_poly%size,eigvec(:,j),1)
         end do
     end subroutine InitEst
+    !****************************************************************
+    !				           RevEigvecUpd                         *
+    !****************************************************************
+    !   Applies the reversal polynomial to update the eigenvector
+    !   approximation given a new eigenvalue approximation.
+    !****************************************************************
+    subroutine RevEigvecUpd(mat_poly,z,v)
+        implicit none
+        ! argument variables
+        type(trid_mp), intent(in)       :: mat_poly
+        complex(kind=dp), intent(in)    :: z
+        complex(kind=dp), intent(inout) :: v(mat_poly%size)
+        ! local variables
+        integer                         :: k
+        type(trid)                      :: mat
+        complex(kind=dp)                :: qmat(mat_poly%size-1,2)
+        
+        ! reversal Horner's method
+        mat = mat_poly%coeff(1)
+        do k=2,mat_poly%degree+1
+            mat%upper = mat%upper*z + mat_poly%coeff(k)%upper
+            mat%main = mat%main*z + mat_poly%coeff(k)%main
+            mat%lower = mat%lower*z + mat_poly%coeff(k)%lower
+        end do
+        ! qr decomposition of mat
+        call TriQR(mat_poly%size,mat,qmat)
+        ! multiply v by Q
+        call QMult(mat_poly%size,qmat,v)
+        ! solve back substitution
+        call TriBackSub(mat_poly%size,mat%main(1:mat_poly%size),mat%upper(1:mat_poly%size-1),mat%lower(1:mat_poly%size-2),v)
+    end subroutine RevEigvecUpd
+    !****************************************************************
+    !				           EigvecUpd                            *
+    !****************************************************************
+    !   Applies the original polynomial to update the eigenvector
+    !   approximation given a new eigenvalue approximation.
+    !****************************************************************
+    subroutine EigvecUpd(mat_poly,z,v)
+        implicit none
+        ! argument variables
+        type(trid_mp), intent(in)       :: mat_poly
+        complex(kind=dp), intent(in)    :: z
+        complex(kind=dp), intent(inout) :: v(mat_poly%size)
+        ! local variables
+        integer                         :: k
+        type(trid)                      :: mat
+        complex(kind=dp)                :: qmat(mat_poly%size-1,2)
+        
+        ! standard Horner's method
+        mat = mat_poly%coeff(mat_poly%degree+1)
+        do k=mat_poly%degree,1,-1
+            mat%upper = mat%upper*z + mat_poly%coeff(k)%upper
+            mat%main = mat%main*z + mat_poly%coeff(k)%main
+            mat%lower = mat%lower*z + mat_poly%coeff(k)%lower
+        end do
+        ! qr decomposition of mat
+        call TriQR(mat_poly%size,mat,qmat)
+        ! multiply v by Q
+        call QMult(mat_poly%size,qmat,v)
+        ! solve back substitution
+        call TriBackSub(mat_poly%size,mat%main(1:mat_poly%size),mat%upper(1:mat_poly%size-1),mat%lower(1:mat_poly%size-2),v)
+    end subroutine EigvecUpd
+    !****************************************************************
+    !				           TriBackSub                           *
+    !****************************************************************
+    !   Solves upper triangular system using backsubstitution. This
+    !   particular system arrises when solving a tridiagonal system
+    !   and in the R matrix of Hyman's method. In general, we reference 
+    !   the matrix in this system by its three diagonals: d0, d1, d2. 
+    !****************************************************************
+    subroutine TriBackSub(n,d0,d1,d2,v)
+        implicit none
+        ! argument variables
+        integer, intent(in)             :: n
+        complex(kind=dp), intent(in)    :: d0(n), d1(n-1), d2(n-2)
+        complex(kind=dp), intent(inout) :: v(n)
+        ! local variables
+        integer                         :: i
+        
+        ! row n
+        v(n) = v(n)/d0(n)
+        ! row n-1
+        v(n-1) = (v(n-1) - d1(n-1)*v(n))/d0(n-1)
+        ! row n-2,...,1
+        do i=n-2,1,-1
+            v(i) = (v(i) - d1(i)*v(i+1) - d2(i)*v(i+2))/d0(i)
+        end do
+    end subroutine TriBackSub
     !****************************************************************
     !				           TriMult                              *
     !****************************************************************
     !   Multiply a vector by a tridiagonal matrix.
     !****************************************************************
-    function TriMult(n,mat,x) result(res)
+    function TriMult(n,lower,main,upper,x) result(res)
         implicit none
         ! argument variables
         integer, intent(in)             :: n
-        type(trid), intent(in)          :: mat
-        complex(kind=dp), intent(in)    :: x(n)
+        complex(kind=dp), intent(in)    :: lower(n-1), main(n), upper(n-1), x(n)
         ! local variables
         integer                         :: i
         complex(kind=dp)                :: res(n)
         
         ! row 1
-        res(1) = mat%main(1)*x(1) + mat%upper(1)*x(2)
+        res(1) = main(1)*x(1) + upper(1)*x(2)
         ! row 2,...,n-1
         do i=2,n-1
-            res(i) = mat%lower(i-1)*x(i-1) + mat%main(i)*x(i) + mat%upper(i)*x(i+1)
+            res(i) = lower(i-1)*x(i-1) + main(i)*x(i) + upper(i)*x(i+1)
         end do
         ! row n
-        res(n) = mat%lower(n-1)*x(n-1) + mat%main(n)*x(n)
+        res(n) = lower(n-1)*x(n-1) + main(n)*x(n)
         return
     end function TriMult
     !****************************************************************
@@ -479,11 +611,11 @@ contains
     !   numbers with real and imaginary parts uniformly distributed
     !   in the interval (-1,1).
     !****************************************************************
-    subroutine RandomCmplxVec(vec)
+    subroutine RandomCmplxVec(n,vec)
         implicit none
         ! argument variables
         integer                     :: n
-        complex(kind=dp)            :: vec(:)
+        complex(kind=dp)            :: vec(n)
         ! local variables
         integer                     :: i
         
