@@ -248,6 +248,57 @@ contains
         end do
     end subroutine Horner
     !****************************************************************
+    !				           RevHorner                          *
+    !****************************************************************
+    !   Applies the reversal Horner method to evaluate a matrix 
+    !   polynomial and its derivatives. 
+    !****************************************************************
+    subroutine revHorner(mat_poly,z,revTriHorner) 
+        implicit none
+        !arguement variables
+        type(trid_mp), intent (in)       :: mat_poly
+        complex(kind = dp), intent(in)   :: z
+        type(trid), intent(out)          :: revTriHorner(3)
+        !local variables
+        integer             :: k
+        complex(kind = dp)  :: zz
+           
+        
+        !initial coefficients, initialize the derivatives to 0
+        revTriHorner(1) = mat_poly%coeff(mat_poly%degree + 1)
+        !first derivative,
+        allocate(revTriHorner(2)%upper(mat_poly%size -1), revTriHorner(2)%main(mat_poly%size), &
+                revTriHorner(2)%lower(mat_poly%size -1))
+        revTriHorner(2)%upper = cmplx(0,0,kind = dp)
+        revTriHorner(2)%main = cmplx(0,0, kind = dp)
+        revTriHorner(2)%lower = cmplx(0,0, kind = dp)
+    
+        !second derivative
+        allocate(revTriHorner(3)%upper(mat_poly%size -1), &
+                revTriHorner(3)%main(mat_poly%size), revTriHorner(3)%lower(mat_poly%size -1))
+        revTriHorner(3)%upper = cmplx(0,0,kind = dp)
+        revTriHorner(3)%main = cmplx(0,0, kind = dp)
+        revTriHorner(3)%lower = cmplx(0,0, kind = dp)
+    
+        !horner's method
+        !evaluate the reverseal polynomial
+        do k = mat_poly%degree, 1, -1
+            zz = 1/z
+            !second derivative
+            revTriHorner(3)%lower = revTriHorner(3)%lower * zz + revTriHorner(3)%lower
+            revTriHorner(3)%main = revTriHorner(3)%main * zz + revTriHorner(3)%main
+            revTriHorner(3)%upper = revTriHorner(3)%upper * zz + revTriHorner(3)%lower
+            !first derivative
+            revTriHorner(2)%lower = revTriHorner(2)%lower * zz + revTriHorner(2)%lower
+            revTriHorner(2)%main = revTriHorner(2)%main * zz + revTriHorner(2)%main
+            revTriHorner(2)%upper = revTriHorner(2)%upper * zz + revTriHorner(2)%lower
+            !full value
+            revTriHorner(1)%lower = revTriHorner(1)%lower * zz + revTriHorner(1)%lower
+            revTriHorner(1)%main = revTriHorner(1)%main * zz + revTriHorner(1)%main
+            revTriHorner(1)%upper = revTriHorner(1)%upper * zz + revTriHorner(1)%lower
+        end do
+    end subroutine revHorner
+    !****************************************************************
     !				           InitEst                              *
     !****************************************************************
     !   Computes the initial eigenvalue and eigenvector estimates
