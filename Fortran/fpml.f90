@@ -60,9 +60,11 @@ module fpml
     implicit none
     integer, parameter                          :: dp = kind(1.d0)
     real(kind=dp), parameter                    :: eps = epsilon(1.0_dp), big = huge(1.0_dp), small = tiny(1.0_dp)
+	public										:: fpml_main
+	private										:: rcheck_lag, check_lag, modify_lag, estimates, conv_hull, cross, check_nan_inf
 contains
     !************************************************
-    !                       main                    *
+    !                       fpml_main               *
     !************************************************
     ! Computes the roots of a polynomial of degree
     ! deg whose coefficients are stored in p. The
@@ -71,7 +73,7 @@ contains
     ! and the condition number of each root
     ! approximation is stored in cond.
     !************************************************
-    subroutine main(poly, deg, roots, berr, cond, conv, itmax)
+    subroutine fpml_main(poly, deg, roots, berr, cond, conv, itmax)
         implicit none
         ! argument variables
         integer, intent(in)             :: deg, itmax
@@ -167,7 +169,7 @@ contains
                 end if
             end do
         end if
-    end subroutine main
+    end subroutine fpml_main
     !************************************************
     !                       rcheck_lag              *
     !************************************************
