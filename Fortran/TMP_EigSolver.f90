@@ -626,7 +626,7 @@ contains
         call zlassq(2, tmp, 1, scale, sum)
         ! store result
         alpha = scale*sqrt(sum)
-    end subroutine
+    end subroutine FroNorm
     !****************************************************************
     !				           InitRandomSeed                       *
     !****************************************************************
