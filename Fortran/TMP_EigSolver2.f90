@@ -1,6 +1,7 @@
 module TMP_EigSolver2
     use fpml
     implicit none
+    real(kind=dp), parameter            :: mu=2.0_dp**(-53)
     !****************************************************************
     !				           Type tri                             *
     !****************************************************************
@@ -40,22 +41,88 @@ contains
         ! local variables
         integer                         :: i, j, num_eig, total_eig
         real(kind=dp)                   :: r
-        real(kind=dp), allocatable      :: alpha(:)
+        real(kind=dp)                   :: alpha(mat_poly%degree+1)
         complex(kind=dp)                :: lag_term1, lag_term2, z
         ! intrinsic functions
         intrinsic                       :: abs
         
         ! store norm of matrix coefficients
-        allocate(alpha(mat_poly%degree+1))
-        write(*,*) 'forbenius norm of coefficients'
         do i=1,mat_poly%degree+1
             call FroNorm(mat_poly%size,mat_poly%coeff(i),alpha(i))
             alpha(i) = alpha(i)*(3.8_dp*(i-1)+1)
         end do
         ! initial estimates
-        write(*,*) 'initial estimates'
         call InitEst(mat_poly,eigval,eigvec)
+        ! main loop
+        num_eig = 0
+        total_eig = mat_poly%size*mat_poly%degree
+        conv = (/ (0, j=1,total_eig) /)
+        do i=1,itmax
+            do j=1,total_eig
+                if(conv(j)==0) then
+                    z = eigval(j)
+                    r = abs(z)
+                    ! standard Hyman to compute lag terms
+                    call Hyman(mat_poly,alpha,z,r,eigvec(:,j),lag_term1,lag_term2,berr(j),cond(j),conv(j))
+                    if(conv(j)==0) then
+                        ! modify lag terms and update eigenvalue approximation
+                        call ModifyLaguerre(total_eig,lag_term1,lag_term2,z,j,eigval)
+                        eigval(j) = z - lag_term2
+                        ! update eigenvector approximation
+                        call EigvecUpd(mat_poly,z,eigvec(:,j))
+                    else
+                        ! don't update eigenvalue approximation
+                        num_eig = num_eig + 1
+                        if(num_eig==total_eig) go to 10
+                    end if
+                end if
+            end do
+        end do
+        ! final steps
+        10 continue
+        write(*,*) maxval(berr)
+        write(*,*) conv
     end subroutine EigSolver
+    !****************************************************************
+    !				           Modify Laguerre                      *
+    !****************************************************************
+    !   Modifys the Laguerre correction terms computed by Hyman's 
+    !   method by taking into account the deflation strategy. The
+    !   final Laguerre correction term is returned in lag_term2.
+    !****************************************************************
+    subroutine ModifyLaguerre(total_eig,lag_term1,lag_term2,z,j,eigval)
+        implicit none
+        ! argument variables
+        integer, intent(in)             :: total_eig, j
+        complex(kind=dp), intent(in)    :: eigval(:), z
+        complex(kind=dp), intent(inout) :: lag_term1, lag_term2
+        ! local variables
+        integer                         :: k
+        complex(kind=dp)                :: temp
+        ! intrinsic functions
+        intrinsic                       :: abs, sqrt
+        
+        ! adopt deflation strategy
+        do k=1,j-1
+            temp = 1/(z - eigval(k))
+            lag_term1 = lag_term1 - temp
+            lag_term2 = lag_term2 - temp**2
+        end do
+        do k=j+1,total_eig
+            temp = 1/(z - eigval(k))
+            lag_term1 = lag_term1 - temp
+            lag_term2 = lag_term2 - temp**2
+        end do
+        ! Laguerre correction
+        temp = sqrt((total_eig-1)*(total_eig*lag_term2-lag_term1**2))
+        lag_term2 = lag_term1 + temp
+        lag_term1 = lag_term1 - temp
+        if(abs(lag_term1)>abs(lag_term2)) then
+            lag_term2 = total_eig/lag_term1
+        else
+            lag_term2 = total_eig/lag_term2
+        end if
+    end subroutine ModifyLaguerre
     !****************************************************************
     !				           Hyman                                *
     !****************************************************************
@@ -120,7 +187,7 @@ contains
         if(res > eps*berr) then
             ! check for subdiagonal zeros in triHorner(1)
             do k=1,mat_poly%size-1
-                if(abs(triHorner(1)%dl(k)) .le. small) triHorner(1)%dl(k) = small
+                if(abs(triHorner(1)%dl(k)) .le. mu) triHorner(1)%dl(k) = mu
             end do
             ! store initial y values
             y = cmplx(0,0,kind=dp)
@@ -142,7 +209,24 @@ contains
                                 - 2.0_dp*TriMult(mat_poly%size-1,triHorner(2)%dl,triHorner(2)%d,triHorner(2)%du,y(:,2))
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,3))
-            ! compute q=eta-h^Tx, q'=eta'-h'^Tx-h^Tx', q''=eta''-h''^Tx-2h'^Tx'-h^Tx''
+            ! compute q=-h^Tx
+            q(1) = -triHorner(1)%d(1)*y(1,1)-triHorner(1)%du(1)*y(2,1)
+            ! compute q'=-h'^Tx-h^Tx'
+			q(2) = -triHorner(2)%d(1)*y(1,1)-triHorner(2)%du(1)*y(2,1) &
+                    -triHorner(1)%d(1)*y(1,2)-triHorner(1)%du(1)*y(2,2)
+            ! compute q''-h''^tx-2h'^Tx'-h^Tx''
+			q(3) = -triHorner(3)%d(1)*y(1,1)-triHorner(3)%du(1)*y(2,1) &
+                    -2.0_dp*(triHorner(2)%d(1)*y(1,2)-triHorner(2)%du(1)*y(2,2)) &
+                    -triHorner(1)%d(1)*y(1,3)-triHorner(1)%du(1)*y(2,3)
+            ! laguerre terms
+            lag_term1 = q(2)/q(1)
+            lag_term2 = lag_term1**2 - q(3)/q(1)
+            ! update laguerre terms with log derivatives
+            do k=1,mat_poly%size-1
+                sum = triHorner(2)%dl(k)/triHorner(1)%dl(k)
+                lag_term1 = lag_term1 + sum
+                lag_term2 = lag_term2 - triHorner(3)%dl(k)/triHorner(1)%dl(k) + sum**2
+            end do
         else
             ! compute backward error and condition number
             berr = res/berr
