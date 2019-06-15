@@ -153,12 +153,12 @@ contains
         ! polynomial evaluation (note triHorner(1) gets allocated memory seperately from mat_poly%coeff)
         triHorner(1) = mat_poly%coeff(mat_poly%degree+1)
         ! polynomial derivative evaluation
-        allocate(triHorner(2)%du(mat_poly%size -1), triHorner(2)%d(mat_poly%size), triHorner(2)%dl(mat_poly%size -1))
+        allocate(triHorner(2)%du(mat_poly%size-1),triHorner(2)%d(mat_poly%size),triHorner(2)%dl(mat_poly%size-1))
         triHorner(2)%du = cmplx(0,0,kind=dp)
         triHorner(2)%d = cmplx(0,0,kind=dp)
         triHorner(2)%dl = cmplx(0,0,kind=dp)
         ! polynomial 2nd derivative evaluation
-        allocate(triHorner(3)%du(mat_poly%size -1), triHorner(3)%d(mat_poly%size), triHorner(3)%dl(mat_poly%size -1))
+        allocate(triHorner(3)%du(mat_poly%size-1),triHorner(3)%d(mat_poly%size),triHorner(3)%dl(mat_poly%size-1))
         triHorner(3)%du = cmplx(0,0,kind=dp)
         triHorner(3)%d = cmplx(0,0,kind=dp)
         triHorner(3)%dl = cmplx(0,0,kind=dp)
@@ -187,7 +187,10 @@ contains
         if(res > eps*berr) then
             ! check for subdiagonal zeros in triHorner(1)
             do k=1,mat_poly%size-1
-                if(abs(triHorner(1)%dl(k)) .le. mu) triHorner(1)%dl(k) = mu
+                if(abs(triHorner(1)%dl(k)) .le. mu) then
+                    write(*,*) 'small subdiagonal'
+                    triHorner(1)%dl(k) = mu
+                end if
             end do
             ! store initial y values
             y = cmplx(0,0,kind=dp)
@@ -201,12 +204,14 @@ contains
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,1))
             ! solve linear system Rx'=y'-R'x
-            y(:,2) = y(:,2) - TriMult(mat_poly%size-1,triHorner(2)%dl,triHorner(2)%d,triHorner(2)%du,y(:,1))
+            y(:,2) = y(:,2) - TriMult(mat_poly%size-1,triHorner(2)%dl(:),triHorner(2)%d(2:mat_poly%size-1), &
+                                triHorner(2)%du(2:mat_poly%size-2),y(:,1))
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,2))
             ! solve linear system Rx''=y''-R''x-2R'x'
-            y(:,3) = y(:,3) - TriMult(mat_poly%size-1,triHorner(3)%dl,triHorner(3)%d,triHorner(3)%du,y(:,1)) &
-                                - 2.0_dp*TriMult(mat_poly%size-1,triHorner(2)%dl,triHorner(2)%d,triHorner(2)%du,y(:,2))
+            y(:,3) = y(:,3) - TriMult(mat_poly%size-1,triHorner(3)%dl(:),triHorner(3)%d(2:mat_poly%size-1), &
+                                triHorner(3)%du(2:mat_poly%size-2),y(:,1)) - 2.0_dp*TriMult(mat_poly%size-1, &
+                                triHorner(2)%dl(:),triHorner(2)%d(2:mat_poly%size-1),triHorner(2)%du(2:mat_poly%size-2),y(:,2))
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,3))
             ! compute q=-h^Tx
@@ -216,7 +221,7 @@ contains
                     -triHorner(1)%d(1)*y(1,2)-triHorner(1)%du(1)*y(2,2)
             ! compute q''-h''^tx-2h'^Tx'-h^Tx''
 			q(3) = -triHorner(3)%d(1)*y(1,1)-triHorner(3)%du(1)*y(2,1) &
-                    -2.0_dp*(triHorner(2)%d(1)*y(1,2)-triHorner(2)%du(1)*y(2,2)) &
+                    -2.0_dp*(triHorner(2)%d(1)*y(1,2)+triHorner(2)%du(1)*y(2,2)) &
                     -triHorner(1)%d(1)*y(1,3)-triHorner(1)%du(1)*y(2,3)
             ! laguerre terms
             lag_term1 = q(2)/q(1)
@@ -232,6 +237,10 @@ contains
             berr = res/berr
             conv = 1
         end if
+        ! deallocate triHorner memory (allocated in Horner)
+        do k=1,3
+            deallocate(triHorner(k)%du,triHorner(k)%d,triHorner(k)%dl)
+        end do
     end subroutine Hyman
     !****************************************************************
     !				           HymanLinearSolve                     *
@@ -324,12 +333,12 @@ contains
             call zlarnv(5,iseed,mat_poly%size,eigvec(:,j))
             eigvec(:,j) = eigvec(:,j)/dznrm2(mat_poly%size,eigvec(:,j),1)
             ! update eigenvector
-            if(abs(z)>1) then
-                z = 1/z
-                call RevEigvecUpd(mat_poly,z,eigvec(:,j))
-            else
+            !if(abs(z)>1) then
+            !    z = 1/z
+            !    call RevEigvecUpd(mat_poly,z,eigvec(:,j))
+            !else
                 call EigvecUpd(mat_poly,z,eigvec(:,j))
-            end if
+            !end if
         end do
     end subroutine InitEst
     !****************************************************************

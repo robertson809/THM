@@ -38,7 +38,7 @@ program TMP_Driver
     end do
     ! call eigenvalue solver
     allocate(eigval(mat_poly%size*mat_poly%degree))
-    allocate(eigvec(mat_poly%size*mat_poly%degree,mat_poly%size))
+    allocate(eigvec(mat_poly%size,mat_poly%size*mat_poly%degree))
     allocate(berr(mat_poly%size*mat_poly%degree))
     allocate(cond(mat_poly%size*mat_poly%degree))
     allocate(conv(mat_poly%size*mat_poly%degree))
