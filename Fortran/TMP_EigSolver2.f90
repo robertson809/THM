@@ -53,6 +53,9 @@ contains
         end do
         ! initial estimates
         call InitEst(mat_poly,eigval,eigvec)
+        do i=1,mat_poly%size*mat_poly%degree
+            write(*,'(ES15.2,ES15.2)') real(eigval(i)), aimag(eigval(i))
+        end do
         ! main loop
         num_eig = 0
         total_eig = mat_poly%size*mat_poly%degree
@@ -63,13 +66,18 @@ contains
                     z = eigval(j)
                     r = abs(z)
                     ! standard Hyman to compute lag terms
-                    call Hyman(mat_poly,alpha,z,r,eigvec(:,j),lag_term1,lag_term2,berr(j),cond(j),conv(j))
+                    call Hyman(mat_poly,alpha,z,r,eigvec(:,j),lag_term1,lag_term2,berr(j),cond(j),conv(j),i==itmax)
                     if(conv(j)==0) then
                         ! modify lag terms and update eigenvalue approximation
                         call ModifyLaguerre(total_eig,lag_term1,lag_term2,z,j,eigval)
                         eigval(j) = z - lag_term2
-                        ! update eigenvector approximation
-                        call EigvecUpd(mat_poly,z,eigvec(:,j))
+                        ! update eigenvector
+                        if(abs(z)>1) then
+                            z = 1/z
+                            call RevEigvecUpd(mat_poly,z,eigvec(:,j))
+                        else
+                            call EigvecUpd(mat_poly,z,eigvec(:,j))
+                        end if
                     else
                         ! don't update eigenvalue approximation
                         num_eig = num_eig + 1
@@ -80,8 +88,7 @@ contains
         end do
         ! final steps
         10 continue
-        write(*,*) maxval(berr)
-        write(*,*) conv
+        !write(*,*) conv
     end subroutine EigSolver
     !****************************************************************
     !				           Modify Laguerre                      *
@@ -104,12 +111,12 @@ contains
         
         ! adopt deflation strategy
         do k=1,j-1
-            temp = 1/(z - eigval(k))
+            temp = 1.0_dp/(z - eigval(k))
             lag_term1 = lag_term1 - temp
             lag_term2 = lag_term2 - temp**2
         end do
         do k=j+1,total_eig
-            temp = 1/(z - eigval(k))
+            temp = 1.0_dp/(z - eigval(k))
             lag_term1 = lag_term1 - temp
             lag_term2 = lag_term2 - temp**2
         end do
@@ -132,9 +139,10 @@ contains
     !   stopping criterion is true, then conv is set to 1 and the
     !   eigenvalue approximation will not be updated.
     !****************************************************************
-    subroutine Hyman(mat_poly,alpha,z,r,v,lag_term1,lag_term2,berr,cond,conv)
+    subroutine Hyman(mat_poly,alpha,z,r,v,lag_term1,lag_term2,berr,cond,conv,check)
         implicit none
         ! argument variables
+        logical, intent(in)             :: check
         type(trid_mp), intent(in)       :: mat_poly
         integer, intent(out)            :: conv
         real(kind=dp), intent(in)       :: alpha(mat_poly%degree+1), r
@@ -146,6 +154,13 @@ contains
         type(trid)                      :: triHorner(3)
         real(kind=dp)                   :: res
         complex(kind=dp)                :: y(mat_poly%size-1,3), q(3), sum
+        ! check rcond variables
+        type(trid)                      :: mat
+        real(kind=dp)                   :: rcond
+        complex(kind=dp)                :: du2(mat_poly%size-2), work(mat_poly%size*2)
+        integer                         :: ipiv(mat_poly%size), info
+        ! external subroutine
+        external                        :: zgttrf, zgtcon
         ! external function
         real(kind=dp)                   :: dznrm2
         external                        :: dznrm2
@@ -185,10 +200,17 @@ contains
         res = dznrm2(mat_poly%size,TriMult(mat_poly%size,triHorner(1)%dl,triHorner(1)%d,triHorner(1)%du,v),1)
         ! compute lag terms or backward error and condition number
         if(res > eps*berr) then
+            if(check) then
+                mat = triHorner(1)
+                call zgttrf(mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,info)
+                call zgtcon('1',mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,berr,rcond,work,info)
+                write(*,*) 'Hyman: Berr = ', rcond
+                write(*,*) 'Hyman: Res = ', res
+            end if
             ! check for subdiagonal zeros in triHorner(1)
             do k=1,mat_poly%size-1
                 if(abs(triHorner(1)%dl(k)) .le. mu) then
-                    write(*,*) 'small subdiagonal'
+                    write(*,*) 'Hyman: small subdiagonal'
                     triHorner(1)%dl(k) = mu
                 end if
             end do
@@ -204,13 +226,13 @@ contains
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,1))
             ! solve linear system Rx'=y'-R'x
-            y(:,2) = y(:,2) - TriMult(mat_poly%size-1,triHorner(2)%dl(:),triHorner(2)%d(2:mat_poly%size-1), &
+            y(:,2) = y(:,2) - HymanMatMult(mat_poly%size-1,triHorner(2)%dl(:),triHorner(2)%d(2:mat_poly%size-1), &
                                 triHorner(2)%du(2:mat_poly%size-2),y(:,1))
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,2))
             ! solve linear system Rx''=y''-R''x-2R'x'
-            y(:,3) = y(:,3) - TriMult(mat_poly%size-1,triHorner(3)%dl(:),triHorner(3)%d(2:mat_poly%size-1), &
-                                triHorner(3)%du(2:mat_poly%size-2),y(:,1)) - 2.0_dp*TriMult(mat_poly%size-1, &
+            y(:,3) = y(:,3) - HymanMatMult(mat_poly%size-1,triHorner(3)%dl(:),triHorner(3)%d(2:mat_poly%size-1), &
+                                triHorner(3)%du(2:mat_poly%size-2),y(:,1)) - 2.0_dp*HymanMatMult(mat_poly%size-1, &
                                 triHorner(2)%dl(:),triHorner(2)%d(2:mat_poly%size-1),triHorner(2)%du(2:mat_poly%size-2),y(:,2))
             call HymanLinearSolve(mat_poly%size-1,triHorner(1)%dl(:),triHorner(1)%d(2:mat_poly%size-1), &
                                 triHorner(1)%du(2:mat_poly%size-2),y(:,3))
@@ -219,7 +241,7 @@ contains
             ! compute q'=-h'^Tx-h^Tx'
 			q(2) = -triHorner(2)%d(1)*y(1,1)-triHorner(2)%du(1)*y(2,1) &
                     -triHorner(1)%d(1)*y(1,2)-triHorner(1)%du(1)*y(2,2)
-            ! compute q''-h''^tx-2h'^Tx'-h^Tx''
+            ! compute q''=-h''^tx-2h'^Tx'-h^Tx''
 			q(3) = -triHorner(3)%d(1)*y(1,1)-triHorner(3)%du(1)*y(2,1) &
                     -2.0_dp*(triHorner(2)%d(1)*y(1,2)+triHorner(2)%du(1)*y(2,2)) &
                     -triHorner(1)%d(1)*y(1,3)-triHorner(1)%du(1)*y(2,3)
@@ -242,6 +264,31 @@ contains
             deallocate(triHorner(k)%du,triHorner(k)%d,triHorner(k)%dl)
         end do
     end subroutine Hyman
+    !****************************************************************
+    !				           HymanMatMult                         *   
+    !****************************************************************
+    !   Performs matrix multiplication with the matrix R in Hymans
+    !   method and an arbitrary vector. We reference R by its three
+    !   diagonals: d, du, du2.
+    !****************************************************************
+    function HymanMatMult(n,d,du,du2,x) result(res)
+        implicit none
+        ! argument variables
+        integer, intent(in)             :: n
+        complex(kind=dp), intent(in)    :: d(:), du(:), du2(:), x(:)
+        ! local variables
+        integer                         :: i
+        complex(kind=dp)                :: res(n)
+        
+        ! rows 1,...,n-2
+        do i=1,n-2
+            res(i) = d(i)*x(i)+du(i)*x(i+1)+du2(i)*x(i+2)
+        end do
+        ! row n-1
+        res(n-1) = d(n-1)*x(n-1)+du(n-1)*x(n)
+        ! row n
+        res(n) = d(n)*x(n)
+    end function HymanMatMult
     !****************************************************************
     !				           HymanLinearSolve                     *
     !****************************************************************
@@ -333,12 +380,12 @@ contains
             call zlarnv(5,iseed,mat_poly%size,eigvec(:,j))
             eigvec(:,j) = eigvec(:,j)/dznrm2(mat_poly%size,eigvec(:,j),1)
             ! update eigenvector
-            !if(abs(z)>1) then
-            !    z = 1/z
-            !    call RevEigvecUpd(mat_poly,z,eigvec(:,j))
-            !else
+            if(abs(z)>1) then
+                z = 1/z
+                call RevEigvecUpd(mat_poly,z,eigvec(:,j))
+            else
                 call EigvecUpd(mat_poly,z,eigvec(:,j))
-            !end if
+            end if
         end do
     end subroutine InitEst
     !****************************************************************
@@ -484,4 +531,32 @@ contains
         ! store result
         alpha = scale*sqrt(sum)
     end subroutine FroNorm
+    !****************************************************************
+    !				           OneNorm                              *
+    !****************************************************************
+    !   Computes the 1-Norm of a tridiagonal matrix.
+    !****************************************************************
+    function OneNorm(n,mat) result(res)
+        implicit none
+        ! argumment variables
+        integer, intent(in)             :: n
+        type(trid), intent(in)          :: mat
+        ! local variables
+        integer                         :: j
+        real(kind=dp)                   :: column(n), res
+        ! intrinsic function
+        intrinsic                       :: abs, maxval
+        
+        ! column 1
+        column(1) = abs(mat%d(1)) + abs(mat%dl(1))
+        ! column 2,...,n-1
+        do j=2,n-1
+            column(j) = abs(mat%du(j-1)) + abs(mat%d(j)) + abs(mat%dl(j))
+        end do
+        ! column n
+        column(n) = abs(mat%du(n-1)) + abs(mat%d(n))
+        ! maximum
+        res = maxval(column)
+        return
+    end function OneNorm
 end module TMP_EigSolver2
