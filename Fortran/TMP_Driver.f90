@@ -22,8 +22,8 @@ program TMP_Driver
     iseed = (/ (mod(iseed(j),4095), j=1,4)/)
     if(mod(iseed(4),2)==0) iseed(4)=iseed(4)+1
     ! allocate memory for mat_poly
-    mat_poly%size = 25
-    mat_poly%degree = 1
+    mat_poly%size = 100
+    mat_poly%degree = 2
     allocate(mat_poly%coeff(mat_poly%degree+1))
     do k=1,mat_poly%degree+1
         allocate(mat_poly%coeff(k)%du(mat_poly%size-1))

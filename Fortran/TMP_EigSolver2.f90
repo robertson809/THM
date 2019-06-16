@@ -53,9 +53,6 @@ contains
         end do
         ! initial estimates
         call InitEst(mat_poly,eigval,eigvec)
-        do i=1,mat_poly%size*mat_poly%degree
-            write(*,'(ES15.2,ES15.2)') real(eigval(i)), aimag(eigval(i))
-        end do
         ! main loop
         num_eig = 0
         total_eig = mat_poly%size*mat_poly%degree
@@ -88,7 +85,7 @@ contains
         end do
         ! final steps
         10 continue
-        !write(*,*) conv
+        write(*,*) maxval(berr)
     end subroutine EigSolver
     !****************************************************************
     !				           Modify Laguerre                      *
@@ -192,6 +189,10 @@ contains
             triHorner(1)%d = triHorner(1)%d*z + mat_poly%coeff(k)%d
             triHorner(1)%dl = triHorner(1)%dl*z + mat_poly%coeff(k)%dl
         end do
+        ! scale 2nd derivative 
+        triHorner(3)%du = 2.0_dp*triHorner(3)%du
+        triHorner(3)%d = 2.0_dp*triHorner(3)%d
+        triHorner(3)%dl = 2.0_dp*triHorner(3)%dl
         ! backward error terms
         berr = alpha(mat_poly%degree+1)
         do k=mat_poly%degree,1,-1
