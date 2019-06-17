@@ -60,11 +60,9 @@ module fpml
     implicit none
     integer, parameter                          :: dp = kind(1.d0)
     real(kind=dp), parameter                    :: eps = epsilon(1.0_dp), big = huge(1.0_dp), small = tiny(1.0_dp)
-	public										:: fpml_main
-	private										:: rcheck_lag, check_lag, modify_lag, estimates, conv_hull, cross, check_nan_inf
 contains
     !************************************************
-    !                       fpml_main               *
+    !                       main                    *
     !************************************************
     ! Computes the roots of a polynomial of degree
     ! deg whose coefficients are stored in p. The
@@ -73,7 +71,7 @@ contains
     ! and the condition number of each root
     ! approximation is stored in cond.
     !************************************************
-    subroutine fpml_main(poly, deg, roots, berr, cond, conv, itmax)
+    subroutine main(poly, deg, roots, berr, cond, conv, itmax)
         implicit none
         ! argument variables
         integer, intent(in)             :: deg, itmax
@@ -91,17 +89,26 @@ contains
 
         ! precheck
         alpha = abs(poly)
-        if(alpha(deg+1)==0) then
-            write(*,'(A)') 'Warning: leading coefficient is zero.'
+        if(alpha(deg+1)<small) then
+            write(*,'(A)') 'Warning: leading coefficient too small.'
             return
         elseif(deg==1) then
             roots(1) = -poly(1)/poly(2)
+            conv = 1
+            berr = 0.0_dp
+            cond(1) = (alpha(1) + alpha(2)*abs(roots(1)))/(abs(roots(1))*alpha(2))
             return
         elseif(deg==2) then
             b = -poly(2)/(2*poly(3))
             c = sqrt(poly(2)**2-4*poly(3)*poly(1))/(2*poly(3))
             roots(1) = b - c
             roots(2) = b + c
+            conv = 1
+            berr = 0.0_dp
+            cond(1) = (alpha(1)+alpha(2)*abs(roots(1))+alpha(3)*abs(roots(1))**2)/(abs(roots(1))* &
+                        abs(poly(2)+2.0_dp*poly(3)*roots(1)))
+            cond(2) = (alpha(1)+alpha(2)*abs(roots(2))+alpha(3)*abs(roots(2))**2)/(abs(roots(2))* &
+                        abs(poly(2)+2.0_dp*poly(3)*roots(2)))
             return
         end if
         ! initial estimates
@@ -115,7 +122,7 @@ contains
                 if(conv(j)==0) then
                     z = roots(j)
                     r = abs(z)
-                    if(r > 1) then
+                    if(r > 1.0_dp) then
                         call rcheck_lag(poly, alpha, deg, b, c, z, r, conv(j), berr(j), cond(j))
                     else
                         call check_lag(poly, alpha, deg, b, c, z, r, conv(j), berr(j), cond(j))
@@ -143,7 +150,7 @@ contains
                 if(conv(j) .ne. 1) then
                     z = roots(j)
                     r = abs(z)
-                    if(r>1) then
+                    if(r>1.0_dp) then
                         z = 1/z
                         r = 1/r
                         c = 0
@@ -171,7 +178,7 @@ contains
                 end if
             end do
         end if
-    end subroutine fpml_main
+    end subroutine main
     !************************************************
     !                       rcheck_lag              *
     !************************************************
