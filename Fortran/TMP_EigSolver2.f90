@@ -30,14 +30,14 @@ contains
     !   Main subroutine for computing the eigenvalues and eigenvectors
     !   of a tridiagonal matrix polynomial. 
     !****************************************************************
-    subroutine EigSolver(mat_poly,eigval,eigvec,berr,cond,conv,itmax)
+    subroutine EigSolver(mat_poly,eigval,eigvec,berr,cond,conv,itmax,num)
         implicit none
         ! argument variables
         type(trid_mp), intent(in)       :: mat_poly
-        complex(kind=dp), intent(out)   :: eigval(:), eigvec(:,:)
-        real(kind=dp), intent(out)      :: berr(:), cond(:)
-        integer, intent(out)            :: conv(:)
-        integer, intent(in)             :: itmax
+        complex(kind=dp), intent(inout) :: eigval(:), eigvec(:,:)
+        real(kind=dp), intent(inout)    :: berr(:), cond(:)
+        integer, intent(inout)          :: conv(:)
+        integer, intent(in)             :: itmax, num
         ! local variables
         integer                         :: i, j, num_eig, total_eig
         real(kind=dp)                   :: r
@@ -52,11 +52,15 @@ contains
             alpha(i) = alpha(i)*(3.8_dp*(i-1)+1)
         end do
         ! initial estimates
-        call InitEst(mat_poly,eigval,eigvec)
+        if(num==1) then
+            call InitEst(mat_poly,eigval,eigvec)
+            conv = 0
+            num_eig = 0
+        else
+            num_eig = sum(conv)
+        end if
         ! main loop
-        num_eig = 0
         total_eig = mat_poly%size*mat_poly%degree
-        conv = (/ (0, j=1,total_eig) /)
         do i=1,itmax
             do j=1,total_eig
                 if(conv(j)==0) then
@@ -289,6 +293,7 @@ contains
         res(n-1) = d(n-1)*x(n-1)+du(n-1)*x(n)
         ! row n
         res(n) = d(n)*x(n)
+        return
     end function HymanMatMult
     !****************************************************************
     !				           HymanLinearSolve                     *
@@ -363,7 +368,7 @@ contains
             call zlarnv(5,iseed,mat_poly%size,x)
             x = x/dznrm2(mat_poly%size,x,1)
             ! build coefficients of scalar polynomial
-            do k=1,mat_poly%degree+1
+            do k=1,mat_poly%degree
                 ! multiply random vector by kth coefficient
                 y = TriMult(mat_poly%size,mat_poly%coeff(k)%dl,mat_poly%coeff(k)%d,mat_poly%coeff(k)%du,x)
                 ! solve linear system Am*x=y
@@ -371,6 +376,7 @@ contains
                 ! compute dot product x^H*y
                 poly(k) = zdotc(mat_poly%size,x,1,y,1)
             end do
+            poly(mat_poly%degree+1) = cmplx(1,0,kind=dp)
             ! compute roots of polynomial
             call fpml_main(poly,mat_poly%degree,eigval((j-1)*mat_poly%degree+1:j*mat_poly%degree),berr,cond,conv,itmax)
         end do

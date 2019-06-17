@@ -71,7 +71,7 @@ contains
     ! and the condition number of each root
     ! approximation is stored in cond.
     !************************************************
-    subroutine main(poly, deg, roots, berr, cond, conv, itmax)
+    subroutine fpml_main(poly, deg, roots, berr, cond, conv, itmax)
         implicit none
         ! argument variables
         integer, intent(in)             :: deg, itmax
@@ -178,7 +178,7 @@ contains
                 end if
             end do
         end if
-    end subroutine main
+    end subroutine fpml_main
     !************************************************
     !                       rcheck_lag              *
     !************************************************
