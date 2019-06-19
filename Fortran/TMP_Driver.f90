@@ -9,7 +9,7 @@ program TMP_Driver
     ! eigsolver variables
     complex(kind=dp), allocatable   :: eigval(:), eigvec(:,:)
     real(kind=dp), allocatable      :: berr(:), cond(:)
-    integer, parameter              :: itmax = 60
+    integer, parameter              :: itmax = 30
     integer, allocatable            :: conv(:)
     ! intrinsic subroutines
     intrinsic                       :: system_clock

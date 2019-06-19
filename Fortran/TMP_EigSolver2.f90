@@ -73,12 +73,12 @@ contains
                         call ModifyLaguerre(total_eig,lag_term1,lag_term2,z,j,eigval)
                         eigval(j) = z - lag_term2
                         ! update eigenvector
-                        if(abs(z)>1) then
-                            z = 1/z
-                            call RevEigvecUpd(mat_poly,z,eigvec(:,j))
-                        else
-                            call EigvecUpd(mat_poly,z,eigvec(:,j))
-                        end if
+                        !if(r>1) then
+                        !    z = 1/z
+                        !    call RevEigvecUpd(mat_poly,z,eigvec(:,j))
+                        !else
+                        call EigvecUpd(mat_poly,z,eigvec(:,j))
+                        !end if
                     else
                         ! don't update eigenvalue approximation
                         num_eig = num_eig + 1
@@ -211,6 +211,7 @@ contains
                 call zgtcon('1',mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,berr,rcond,work,info)
                 write(*,*) 'Hyman: Berr = ', rcond
                 write(*,*) 'Hyman: Res = ', res
+                write(*,*) 'Hyman: r = ', r
             end if
             ! check for subdiagonal zeros in triHorner(1)
             do k=1,mat_poly%size-1
@@ -387,12 +388,12 @@ contains
             call zlarnv(5,iseed,mat_poly%size,eigvec(:,j))
             eigvec(:,j) = eigvec(:,j)/dznrm2(mat_poly%size,eigvec(:,j),1)
             ! update eigenvector
-            if(abs(z)>1) then
-                z = 1/z
-                call RevEigvecUpd(mat_poly,z,eigvec(:,j))
-            else
-                call EigvecUpd(mat_poly,z,eigvec(:,j))
-            end if
+            !if(abs(z)>1) then
+            !    z = 1/z
+            !    call RevEigvecUpd(mat_poly,z,eigvec(:,j))
+            !else
+            call EigvecUpd(mat_poly,z,eigvec(:,j))
+            !end if
         end do
     end subroutine InitEst
     !****************************************************************
