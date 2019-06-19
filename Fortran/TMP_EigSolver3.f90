@@ -63,10 +63,10 @@ contains
                     r = abs(z)
                     if(r>1.0_dp) then
                         ! reversal Hyman to compute lag terms
-                        call RevHyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr(j),cond(j),conv(j),total_eig)
+                        call RevHyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr(j),conv(j),total_eig)
                     else
                         ! standard Hyman to compute lag terms
-                        call Hyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr(j),cond(j),conv(j))
+                        call Hyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr(j),conv(j))
                     end if
                     if(conv(j)==0) then
                         ! modify lag terms and update eigenvalue approximation
@@ -75,10 +75,7 @@ contains
                     else
                         ! compute eigenvectors, backward error, and condition numbers
                         num_eig = num_eig + 1
-                        if(num_eig==total_eig) then
-                            write(*,*) 'Convergence!'
-                            go to 10
-                        end if
+                        if(num_eig==total_eig) go to 10
                     end if
                 end if
             end do
@@ -136,14 +133,14 @@ contains
     !   stopping criterion is true, then conv is set to 1 and the
     !   eigenvalue approximation will not be updated.
     !****************************************************************
-    subroutine RevHyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr,cond,conv,total_eig)
+    subroutine RevHyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr,conv,total_eig)
         implicit none
         ! argument variables
         type(trid_mp), intent(in)       :: mat_poly
         integer, intent(in)             :: total_eig
         integer, intent(out)            :: conv
         real(kind=dp), intent(in)       :: alpha(mat_poly%degree+1), r
-        real(kind=dp), intent(out)      :: berr, cond
+        real(kind=dp), intent(out)      :: berr
         complex(kind=dp), intent(in)    :: z
         complex(kind=dp), intent(out)   :: lag_term1, lag_term2
         ! local variables
@@ -192,7 +189,7 @@ contains
         triHorner(3)%du = 2.0_dp*triHorner(3)%du
         triHorner(3)%d = 2.0_dp*triHorner(3)%d
         triHorner(3)%dl = 2.0_dp*triHorner(3)%dl
-        ! backward error terms
+        ! backward error
         rr = 1/r
         berr = alpha(1)
         do k=2,mat_poly%degree+1
@@ -201,9 +198,10 @@ contains
         mat = triHorner(1)
         call zgttrf(mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,info)
         call zgtcon('1',mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,berr,rcond,work,info)
+        berr = rcond
         !  deallocate mat memory (allocated above)
         deallocate(mat%du,mat%d,mat%dl)
-        if(rcond > mu) then
+        if(berr > eps) then
             ! check for subdiagonal zeros in triHorner(1)
             do k=1,mat_poly%size-1
                 if(abs(triHorner(1)%dl(k)) .le. mu) then
@@ -272,13 +270,13 @@ contains
     !   stopping criterion is true, then conv is set to 1 and the
     !   eigenvalue approximation will not be updated.
     !****************************************************************
-    subroutine Hyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr,cond,conv)
+    subroutine Hyman(mat_poly,alpha,z,r,lag_term1,lag_term2,berr,conv)
         implicit none
         ! argument variables
         type(trid_mp), intent(in)       :: mat_poly
         integer, intent(out)            :: conv
         real(kind=dp), intent(in)       :: alpha(mat_poly%degree+1), r
-        real(kind=dp), intent(out)      :: berr, cond
+        real(kind=dp), intent(out)      :: berr
         complex(kind=dp), intent(in)    :: z
         complex(kind=dp), intent(out)   :: lag_term1, lag_term2
         ! local variables
@@ -326,7 +324,7 @@ contains
         triHorner(3)%du = 2.0_dp*triHorner(3)%du
         triHorner(3)%d = 2.0_dp*triHorner(3)%d
         triHorner(3)%dl = 2.0_dp*triHorner(3)%dl
-        ! backward error terms
+        ! backward error
         berr = alpha(mat_poly%degree+1)
         do k=mat_poly%degree,1,-1
             berr = r*berr + alpha(k)
@@ -334,9 +332,10 @@ contains
         mat = triHorner(1)
         call zgttrf(mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,info)
         call zgtcon('1',mat_poly%size,mat%dl,mat%d,mat%du,du2,ipiv,berr,rcond,work,info)
+        berr = rcond
         !  deallocate mat memory (allocated above)
         deallocate(mat%du,mat%d,mat%dl)
-        if(rcond > mu) then
+        if(berr > eps) then
             ! check for subdiagonal zeros in triHorner(1)
             do k=1,mat_poly%size-1
                 if(abs(triHorner(1)%dl(k)) .le. mu) then
