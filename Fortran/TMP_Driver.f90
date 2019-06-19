@@ -1,5 +1,5 @@
 program TMP_Driver
-    use tmp_eigsolver2
+    use tmp_eigsolver3
     implicit none
     ! local variables
     type(trid_mp)                   :: mat_poly
@@ -9,7 +9,7 @@ program TMP_Driver
     ! eigsolver variables
     complex(kind=dp), allocatable   :: eigval(:), eigvec(:,:)
     real(kind=dp), allocatable      :: berr(:), cond(:)
-    integer, parameter              :: itmax = 30
+    integer, parameter              :: itmax = 60
     integer, allocatable            :: conv(:)
     ! intrinsic subroutines
     intrinsic                       :: system_clock
@@ -42,11 +42,7 @@ program TMP_Driver
     allocate(berr(mat_poly%size*mat_poly%degree))
     allocate(cond(mat_poly%size*mat_poly%degree))
     allocate(conv(mat_poly%size*mat_poly%degree))
-    call EigSolver(mat_poly,eigval,eigvec,berr,cond,conv,itmax,1)
-    if(minval(conv)==0) then
-        write(*,*) '2nd Try:'
-        call EigSolver(mat_poly,eigval,eigvec,berr,cond,conv,itmax,2)
-    end if
+    call EigSolver(mat_poly,eigval,eigvec,berr,cond,conv,itmax)
     deallocate(eigval,eigvec,berr,cond,conv)
     ! deallocate mat_poly memory
     do k=1,mat_poly%degree+1
