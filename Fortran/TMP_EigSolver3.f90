@@ -46,16 +46,32 @@ contains
         ! intrinsic functions
         intrinsic                       :: abs
         
+        ! open file to store eigenvalue estimates
+        open(unit=1,file="data_files/eigvals.csv")
         ! store norm of matrix coefficients
         do i=1,mat_poly%degree+1
             alpha(i) = FroNorm(mat_poly%size,mat_poly%coeff(i))*(3.8_dp*(i-1)+1.0_dp)
         end do
         ! initial estimates
         call InitEst(mat_poly,eigval)
+        ! write eigenvalue estimates to file
+        total_eig = mat_poly%size*mat_poly%degree
+        do j=1,total_eig-1
+            if(aimag(eigval(j))>0) then
+                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+            else
+                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+            end if
+        end do
+        j=total_eig
+        if(aimag(eigval(j))>0) then
+            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j'
+        else
+            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j'
+        end if
         ! main loop
         conv = 0
         num_eig = 0
-        total_eig = mat_poly%size*mat_poly%degree
         do i=1,itmax
             do j=1,total_eig
                 if(conv(j)==0) then
@@ -75,14 +91,47 @@ contains
                     else
                         ! compute eigenvectors, backward error, and condition numbers
                         num_eig = num_eig + 1
-                        if(num_eig==total_eig) go to 10
+                        if(num_eig==total_eig) then
+                            write(*,*) 'itnum = ', i
+                            go to 10
+                        end if
                     end if
                 end if
             end do
+            ! write eigenvalue estimates to file
+            do j=1,total_eig-1
+                if(aimag(eigval(j))>0) then
+                    write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+                else
+                    write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+                end if
+            end do
+            j=total_eig
+            if(aimag(eigval(j))>0) then
+                write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j'
+            else
+                write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j'
+            end if
         end do
         ! final steps
         10 continue
-        write(*,*) maxval(berr)
+        write(*,*) 'berr = ', maxval(berr)
+        ! write last eigenvalue estimates to file
+        do j=1,total_eig-1
+            if(aimag(eigval(j))>0) then
+                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+            else
+                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+            end if
+        end do
+        j=total_eig
+        if(aimag(eigval(j))>0) then
+            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+        else
+            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+        end if
+        ! close file
+        close(1)
     end subroutine EigSolver
     !****************************************************************
     !				           Modify Laguerre                      *
@@ -234,7 +283,7 @@ contains
             ! compute q=-h^Tx
             q(1) = -triHorner(1)%d(1)*y(1,1)-triHorner(1)%du(1)*y(2,1)
             ! compute q'=-h'^Tx-h^Tx'
-			q(2) = -triHorner(2)%d(1)*y(1,1)-triHorner(2)%du(1)*y(2,1) &
+            q(2) = -triHorner(2)%d(1)*y(1,1)-triHorner(2)%du(1)*y(2,1) &
                     -triHorner(1)%d(1)*y(1,2)-triHorner(1)%du(1)*y(2,2)
             ! compute q''=-h''^tx-2h'^Tx'-h^Tx''
 			q(3) = -triHorner(3)%d(1)*y(1,1)-triHorner(3)%du(1)*y(2,1) &
@@ -458,7 +507,7 @@ contains
         ! local variables
         integer                         :: clock, j, k
         type(trid)                      :: mat
-        complex(kind=dp)                :: x(mat_poly%size), y(mat_poly%size), z
+        complex(kind=dp)                :: x(mat_poly%size), y(mat_poly%size)
         ! lapack variables
         integer                         :: iseed(4), ipiv(mat_poly%size), info
         complex(kind=dp)                :: du2(mat_poly%size)
@@ -481,6 +530,9 @@ contains
         iseed = clock + 37*(/ (j-1, j=1,4) /)
         iseed = (/ (mod(iseed(j),4095), j=1,4)/)
         if(mod(iseed(4),2)==0) iseed(4)=iseed(4)+1
+        ! testing: random initial estimates
+        ! call zlarnv(5,iseed,mat_poly%size*mat_poly%degree,eigval)
+        ! return
         ! set mat to leading coefficient and perform lu decomposition
         ! note memory is allocated seperately from mat_poly%coeff
         mat = mat_poly%coeff(mat_poly%degree+1)
@@ -555,18 +607,18 @@ contains
         ! column 1
         tmp(1) = mat%d(1)
         tmp(2) = mat%dl(1)
-        call zlassq(2, tmp, 1, scale, sum)
+        call zlassq(2, tmp(1), 1, scale, sum)
         ! columns 2,...,n-1
         do j=2,n-1
             tmp(1) = mat%du(j-1)
             tmp(2) = mat%d(j)
             tmp(3) = mat%dl(j)
-            call zlassq(3, tmp, 1, scale, sum)
+            call zlassq(3, tmp(1), 1, scale, sum)
         end do
         ! column n
         tmp(1) = mat%du(n-1)
         tmp(2) = mat%d(n)
-        call zlassq(2, tmp, 1, scale, sum)
+        call zlassq(2, tmp(1), 1, scale, sum)
         ! store result
         res = scale*sqrt(sum)
         return

@@ -32,9 +32,12 @@ program TMP_Driver
     end do
     ! create random tridiagonal matrix polynomial
     do k=1,mat_poly%degree+1
-        call zlarnv(5,iseed,mat_poly%size-1,mat_poly%coeff(k)%du)
-        call zlarnv(5,iseed,mat_poly%size,mat_poly%coeff(k)%d)
-        call zlarnv(5,iseed,mat_poly%size-1,mat_poly%coeff(k)%dl)
+        call zlarnv(2,iseed,mat_poly%size-1,mat_poly%coeff(k)%du)
+        mat_poly%coeff(k)%du = cmplx(real(mat_poly%coeff(k)%du),0.0_dp,kind=dp)
+        call zlarnv(2,iseed,mat_poly%size,mat_poly%coeff(k)%d)
+        mat_poly%coeff(k)%d = cmplx(real(mat_poly%coeff(k)%d),0.0_dp,kind=dp)
+        call zlarnv(2,iseed,mat_poly%size-1,mat_poly%coeff(k)%dl)
+        mat_poly%coeff(k)%dl = cmplx(real(mat_poly%coeff(k)%dl),0.0_dp,kind=dp)
     end do
     ! call eigenvalue solver
     allocate(eigval(mat_poly%size*mat_poly%degree))
