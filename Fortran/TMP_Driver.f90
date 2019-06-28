@@ -22,8 +22,8 @@ program TMP_Driver
     iseed = (/ (mod(iseed(j),4095), j=1,4)/)
     if(mod(iseed(4),2)==0) iseed(4)=iseed(4)+1
     ! allocate memory for mat_poly
-    mat_poly%size = 100
-    mat_poly%degree = 2
+    mat_poly%size = 10
+    mat_poly%degree = 4
     allocate(mat_poly%coeff(mat_poly%degree+1))
     do k=1,mat_poly%degree+1
         allocate(mat_poly%coeff(k)%du(mat_poly%size-1))
@@ -32,12 +32,9 @@ program TMP_Driver
     end do
     ! create random tridiagonal matrix polynomial
     do k=1,mat_poly%degree+1
-        call zlarnv(2,iseed,mat_poly%size-1,mat_poly%coeff(k)%du)
-        mat_poly%coeff(k)%du = cmplx(real(mat_poly%coeff(k)%du),0.0_dp,kind=dp)
-        call zlarnv(2,iseed,mat_poly%size,mat_poly%coeff(k)%d)
-        mat_poly%coeff(k)%d = cmplx(real(mat_poly%coeff(k)%d),0.0_dp,kind=dp)
-        call zlarnv(2,iseed,mat_poly%size-1,mat_poly%coeff(k)%dl)
-        mat_poly%coeff(k)%dl = cmplx(real(mat_poly%coeff(k)%dl),0.0_dp,kind=dp)
+        call zlarnv(5,iseed,mat_poly%size-1,mat_poly%coeff(k)%du)
+        call zlarnv(5,iseed,mat_poly%size,mat_poly%coeff(k)%d)
+        call zlarnv(5,iseed,mat_poly%size-1,mat_poly%coeff(k)%dl)
     end do
     ! call eigenvalue solver
     allocate(eigval(mat_poly%size*mat_poly%degree))
