@@ -58,16 +58,16 @@ contains
         total_eig = mat_poly%size*mat_poly%degree
         do j=1,total_eig-1
             if(aimag(eigval(j))>0) then
-                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+                write(1,'(F10.3,A,F10.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
             else
-                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+                write(1,'(F10.3,A,F10.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
             end if
         end do
         j=total_eig
         if(aimag(eigval(j))>0) then
-            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j'
+            write(1,'(F10.3,A,F10.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j'
         else
-            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j'
+            write(1,'(F10.3,A,F10.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j'
         end if
         ! main loop
         conv = 0
@@ -101,16 +101,16 @@ contains
             ! write eigenvalue estimates to file
             do j=1,total_eig-1
                 if(aimag(eigval(j))>0) then
-                    write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+                    write(1,'(F10.3,A,F10.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
                 else
-                    write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+                    write(1,'(F10.3,A,F10.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
                 end if
             end do
             j=total_eig
             if(aimag(eigval(j))>0) then
-                write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j'
+                write(1,'(F10.3,A,F10.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j'
             else
-                write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j'
+                write(1,'(F10.3,A,F10.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j'
             end if
         end do
         ! final steps
@@ -119,16 +119,16 @@ contains
         ! write last eigenvalue estimates to file
         do j=1,total_eig-1
             if(aimag(eigval(j))>0) then
-                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+                write(1,'(F10.3,A,F10.3,A)', advance='no') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
             else
-                write(1,'(F7.3,A,F7.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+                write(1,'(F10.3,A,F10.3,A)', advance='no') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
             end if
         end do
         j=total_eig
         if(aimag(eigval(j))>0) then
-            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
+            write(1,'(F10.3,A,F10.3,A)') real(eigval(j)), ' + ', abs(aimag(eigval(j))), '*1j, '
         else
-            write(1,'(F7.3,A,F7.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
+            write(1,'(F10.3,A,F10.3,A)') real(eigval(j)), ' - ', abs(aimag(eigval(j))), '*1j, '
         end if
         ! close file
         close(1)
